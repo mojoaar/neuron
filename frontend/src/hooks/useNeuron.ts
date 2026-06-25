@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus, ThemeName, ThemeMode, FontFamily, FONTS, ActivityEntry } from "../types";
 import { API_ENDPOINTS } from "../lib/endpoints";
 
@@ -1325,7 +1325,7 @@ export const useNeuron = () => {
     opt.action();
   };
 
-  const getPaletteFilteredOptions = () => {
+  const getPaletteFilteredOptions = useCallback(() => {
     const items = [
       {
         label: "Open Global Settings [⌘S / Ctrl+S]",
@@ -1394,7 +1394,7 @@ export const useNeuron = () => {
         it.label.toLowerCase().includes(q) ||
         it.category.toLowerCase().includes(q)
     );
-  };
+  }, [projects, paletteQuery, setShowSystemSettings, setShowDocs, setShowApiDocs, setShowDbViewer, setSelectedProject, handleShutdownServer, setThemeMode, setIsTerminalCollapsed, handleSelectProject]);
 
   return {
     projects,

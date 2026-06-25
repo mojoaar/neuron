@@ -22,6 +22,7 @@ export const ClusterDashboard: React.FC<ClusterDashboardProps> = ({
   const [isQuerying, setIsQuerying] = useState(false);
   const [selectedProjToAdd, setSelectedProjToAdd] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [deletingCluster, setDeletingCluster] = useState(false);
 
   const fetchMemberProjects = async () => {
     setIsQuerying(true);
@@ -75,9 +76,11 @@ export const ClusterDashboard: React.FC<ClusterDashboardProps> = ({
   };
 
   const handleDeleteCluster = async () => {
-    if (!window.confirm(`Are you sure you want to permanently delete cluster "${cluster.name}"?`)) {
+    if (!deletingCluster) {
+      setDeletingCluster(true);
       return;
     }
+    setDeletingCluster(false);
     try {
       const res = await fetch(`/api/clusters/${cluster.id}`, {
         method: "DELETE",
@@ -111,13 +114,31 @@ export const ClusterDashboard: React.FC<ClusterDashboardProps> = ({
             <div className="text-[9px] text-terminal-muted mt-1 uppercase">Grouped relational systems catalog workspace ({memberProjects.length} active systems)</div>
           </div>
         </div>
-        <button
-          onClick={handleDeleteCluster}
-          className="py-1 px-3 rounded border border-terminal-red hover:border-terminal-red bg-terminal-red/10 hover:bg-terminal-red/10 text-terminal-red text-[10px] font-bold uppercase transition-all flex items-center space-x-1"
-        >
-          <Trash className="w-3.5 h-3.5" />
-          <span>Delete Cluster</span>
-        </button>
+        {deletingCluster ? (
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] text-terminal-red font-bold animate-pulse uppercase">Delete this cluster?</span>
+            <button
+              onClick={handleDeleteCluster}
+              className="py-1 px-3 rounded bg-terminal-red hover:bg-terminal-red text-white text-[10px] font-bold uppercase transition-all"
+            >
+              Confirm Delete
+            </button>
+            <button
+              onClick={() => setDeletingCluster(false)}
+              className="py-1 px-3 rounded border border-terminal-border text-terminal-muted hover:text-terminal-text text-[10px] font-bold uppercase transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleDeleteCluster}
+            className="py-1 px-3 rounded border border-terminal-red hover:border-terminal-red bg-terminal-red/10 hover:bg-terminal-red/10 text-terminal-red text-[10px] font-bold uppercase transition-all flex items-center space-x-1"
+          >
+            <Trash className="w-3.5 h-3.5" />
+            <span>Delete Cluster</span>
+          </button>
+        )}
       </div>
 
       {/* Add Project to Cluster */}

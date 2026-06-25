@@ -181,8 +181,9 @@ export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
                           </tr>
                         ) : (
                           rows.map((row, rIdx) => {
-                            // First column is the Project ID in 'projects' table
-                            const projectId = isProjectsTable ? String(row[0]) : "";
+                            // Find project ID column by name
+                            const idColIdx = tableData.columns.indexOf("id");
+                            const projectId = isProjectsTable && idColIdx >= 0 ? String(row[idColIdx]) : "";
                             const isHidden = isProjectsTable && hiddenProjectIds.includes(projectId);
 
                             return (
@@ -234,9 +235,8 @@ export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
                                         {isHidden ? (
                                           <button
                                             onClick={async () => {
-                                              onUnhideProject(projectId);
-                                              // Instantly refresh
-                                              setTimeout(() => fetchTableData(selectedTable), 100);
+                                              await onUnhideProject(projectId);
+                                              fetchTableData(selectedTable);
                                             }}
                                             className="px-2 py-0.5 rounded border border-terminal-border bg-terminal-gray hover:border-terminal-green hover:text-terminal-green text-[9px] font-bold uppercase transition-all flex items-center space-x-1"
                                           >
