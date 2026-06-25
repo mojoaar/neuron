@@ -1,0 +1,313 @@
+import React from "react";
+import { 
+  Database, 
+  RefreshCw, 
+  Save, 
+  Trash, 
+  Plus, 
+  Play, 
+  HelpCircle, 
+  Cpu, 
+  Layers, 
+  FileCode, 
+  Smartphone, 
+  Globe, 
+  Terminal as TerminalIcon 
+} from "lucide-react";
+import { SystemTemplate, CatalogSkill } from "../types";
+
+interface SystemSettingsProps {
+  cwd: string;
+  customScopePath: string;
+  setCustomScopePath: (val: string) => void;
+  isCustomScope: boolean;
+  isSavingScope: boolean;
+  systemTemplates: SystemTemplate[];
+  selectedTemplateTech: string;
+  setSelectedTemplateTech: (val: string) => void;
+  tmplAgents: string;
+  setTmplAgents: (val: string) => void;
+  tmplPlan: string;
+  setTmplPlan: (val: string) => void;
+  isSavingTmpl: boolean;
+  catalogSkills: CatalogSkill[];
+  isAddingCatalogSkill: boolean;
+  setIsAddingCatalogSkill: (val: boolean) => void;
+  newCatUrl: string;
+  setNewCatUrl: (val: string) => void;
+  newCatLabel: string;
+  setNewCatLabel: (val: string) => void;
+  newCatTech: string;
+  setNewCatTech: (val: string) => void;
+  newCatChecked: boolean;
+  setNewCatChecked: (val: boolean) => void;
+  isSavingCatSkill: boolean;
+  onSaveScopePath: () => void;
+  onResetScopePath: () => void;
+  onSaveTemplate: () => void;
+  onAddCatalogSkill: (e: React.FormEvent) => void;
+  onDeleteCatalogSkill: (url: string, label: string) => void;
+}
+
+const getStackIcon = (stack: string) => {
+  switch (stack) {
+    case "go": return <Cpu className="w-3.5 h-3.5" />;
+    case "node": return <Layers className="w-3.5 h-3.5" />;
+    case "html": return <FileCode className="w-3.5 h-3.5" />;
+    case "python": return <Cpu className="w-3.5 h-3.5" />;
+    case "nextjs": return <Globe className="w-3.5 h-3.5" />;
+    case "android": return <Smartphone className="w-3.5 h-3.5" />;
+    default: return <TerminalIcon className="w-3.5 h-3.5" />;
+  }
+};
+
+export const SystemSettings: React.FC<SystemSettingsProps> = ({
+  cwd,
+  customScopePath,
+  setCustomScopePath,
+  isCustomScope,
+  isSavingScope,
+  systemTemplates,
+  selectedTemplateTech,
+  setSelectedTemplateTech,
+  tmplAgents,
+  setTmplAgents,
+  tmplPlan,
+  setTmplPlan,
+  isSavingTmpl,
+  catalogSkills,
+  isAddingCatalogSkill,
+  setIsAddingCatalogSkill,
+  newCatUrl,
+  setNewCatUrl,
+  newCatLabel,
+  setNewCatLabel,
+  newCatTech,
+  setNewCatTech,
+  newCatChecked,
+  setNewCatChecked,
+  isSavingCatSkill,
+  onSaveScopePath,
+  onResetScopePath,
+  onSaveTemplate,
+  onAddCatalogSkill,
+  onDeleteCatalogSkill,
+}) => {
+  return (
+    <div className="flex-1 p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full font-mono">
+      {/* Scope Settings */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+          <Database className="w-4 h-4" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ Workspace Scope Root Path ]</h2>
+        </div>
+        <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+          By default, Neuron dynamically scans the process launching folder. Lock a static absolute directory path below to consistently track the same workspace scope across reboots.
+        </p>
+        <div className="flex items-center space-x-2.5">
+          <input
+            type="text"
+            value={customScopePath}
+            onChange={(e) => setCustomScopePath(e.target.value)}
+            placeholder="e.g. /Users/name/Development"
+            className="flex-1 bg-terminal-black border border-terminal-border text-terminal-text rounded px-3 py-1.5 text-xs outline-none focus:border-terminal-green transition-all"
+          />
+          <button
+            onClick={onSaveScopePath}
+            disabled={isSavingScope}
+            className="py-1.5 px-4 rounded bg-terminal-green text-terminal-black font-bold hover:bg-terminal-green/90 text-xs uppercase flex items-center space-x-1.5 shrink-0 transition-all shadow-[0_0_10px_rgba(0,255,102,0.1)]"
+          >
+            {isSavingScope ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <span>Lock Scope</span>
+          </button>
+          {isCustomScope && (
+            <button
+              onClick={onResetScopePath}
+              disabled={isSavingScope}
+              className="py-1.5 px-4 rounded border border-terminal-border hover:border-red-500 hover:text-red-500 bg-terminal-black text-terminal-muted font-bold text-xs uppercase shrink-0 transition-all"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        {isCustomScope && (
+          <div className="text-[10px] text-terminal-green mt-2 flex items-center space-x-1 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse" />
+            <span>Scope Lock Active: {cwd}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Grid for Templates and Catalog */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Templates Panel */}
+        <div className="lg:col-span-6 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col max-h-[750px]">
+          <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
+            <div className="flex items-center space-x-2 text-terminal-green">
+              <FileCode className="w-4 h-4" />
+              <h2 className="font-bold text-xs uppercase tracking-wider">[ System Templates Customizer ]</h2>
+            </div>
+            <select
+              value={selectedTemplateTech}
+              onChange={(e) => setSelectedTemplateTech(e.target.value)}
+              className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1 text-xs outline-none font-bold"
+            >
+              <option value="go">Go (Golang)</option>
+              <option value="node">Node (JavaScript)</option>
+              <option value="nextjs">Next.js (React)</option>
+              <option value="html">HTML (Static)</option>
+              <option value="python">Python (General)</option>
+              <option value="android">Android (Kotlin)</option>
+              <option value="powershell">PowerShell</option>
+            </select>
+          </div>
+
+          <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-terminal-muted uppercase">[ Default AGENTS.md rules context ]</label>
+              <textarea
+                value={tmplAgents}
+                onChange={(e) => setTmplAgents(e.target.value)}
+                className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-2 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-terminal-muted uppercase">[ Default plan.md checklist structure ]</label>
+              <textarea
+                value={tmplPlan}
+                onChange={(e) => setTmplPlan(e.target.value)}
+                className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-2 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-terminal-border/40 pt-4 mt-4 shrink-0 flex justify-end">
+            <button
+              onClick={onSaveTemplate}
+              disabled={isSavingTmpl}
+              className="py-1.5 px-4 rounded bg-terminal-green text-terminal-black font-bold hover:bg-terminal-green/90 text-xs uppercase flex items-center space-x-1.5 transition-all shadow-[0_0_10px_rgba(0,255,102,0.1)]"
+            >
+              {isSavingTmpl ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              <span>Save Templates</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Recommended Catalog Panel */}
+        <div className="lg:col-span-6 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col max-h-[750px]">
+          <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
+            <div className="flex items-center space-x-2 text-terminal-green">
+              <Cpu className="w-4 h-4" />
+              <h2 className="font-bold text-xs uppercase tracking-wider">[ Recommended Skills Catalog ]</h2>
+            </div>
+            <button
+              onClick={() => setIsAddingCatalogSkill(!isAddingCatalogSkill)}
+              className="py-1 px-2.5 rounded border border-terminal-border bg-terminal-black text-terminal-muted hover:text-terminal-green hover:border-terminal-green text-[10px] font-bold uppercase transition-all"
+            >
+              {isAddingCatalogSkill ? "[ Cancel ]" : "[ Add custom ]"}
+            </button>
+          </div>
+
+          {isAddingCatalogSkill && (
+            <form onSubmit={onAddCatalogSkill} className="mb-4 p-3 bg-terminal-black border border-terminal-border rounded space-y-3">
+              <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/30 pb-1 mb-2">
+                [ Catalog Registration ]
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1 col-span-2">
+                  <label className="text-[9px] font-bold text-terminal-muted uppercase">Skill Git/HTTP URL</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCatUrl}
+                    onChange={(e) => setNewCatUrl(e.target.value)}
+                    placeholder="e.g. github.com/username/skill"
+                    className="w-full bg-terminal-gray border border-terminal-border text-terminal-text rounded px-2.5 py-1 text-[11px] outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-terminal-muted uppercase">Display Label</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCatLabel}
+                    onChange={(e) => setNewCatLabel(e.target.value)}
+                    placeholder="e.g. coverage-guard"
+                    className="w-full bg-terminal-gray border border-terminal-border text-terminal-text rounded px-2.5 py-1 text-[11px] outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-terminal-muted uppercase">Tech Stack Category</label>
+                  <select
+                    value={newCatTech}
+                    onChange={(e) => setNewCatTech(e.target.value)}
+                    className="w-full bg-terminal-gray border border-terminal-border text-terminal-text rounded px-2 py-1 text-[11px] outline-none"
+                  >
+                    <option value="general">General</option>
+                    <option value="go">Go</option>
+                    <option value="node">Node</option>
+                    <option value="nextjs">Next.js</option>
+                    <option value="html">HTML</option>
+                    <option value="python">Python</option>
+                    <option value="android">Android</option>
+                    <option value="powershell">PowerShell</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center space-x-2 text-[9px] font-bold text-terminal-muted cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={newCatChecked}
+                    onChange={(e) => setNewCatChecked(e.target.checked)}
+                    className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0"
+                  />
+                  <span>Install by default on new projects</span>
+                </label>
+                <button
+                  type="submit"
+                  disabled={isSavingCatSkill}
+                  className="py-1 px-3 bg-terminal-green text-terminal-black rounded text-[10px] font-bold uppercase hover:bg-terminal-green/90 transition-all inline-flex items-center space-x-1"
+                >
+                  {isSavingCatSkill ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  <span>Add to Catalog</span>
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* High max-height settings catalog list panel */}
+          <div className="flex-1 overflow-y-auto max-h-[650px] space-y-2 pr-1">
+            {catalogSkills.length === 0 ? (
+              <div className="text-center p-8 text-xs text-terminal-muted italic border border-dashed border-terminal-border rounded bg-terminal-black/30">
+                Skills Catalog empty.
+              </div>
+            ) : (
+              catalogSkills.map((sk) => (
+                <div key={sk.url} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between space-x-3">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center space-x-1.5">
+                      {getStackIcon(sk.tech_stack)}
+                      <span className="font-bold text-xs text-terminal-text truncate">{sk.label}</span>
+                      <span className="text-[8px] font-bold text-terminal-green px-1 border border-terminal-green/30 bg-terminal-green/5 rounded uppercase shrink-0 font-mono">
+                        {sk.tech_stack}
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-terminal-muted font-mono truncate">{sk.url}</div>
+                  </div>
+                  <button
+                    onClick={() => onDeleteCatalogSkill(sk.url, sk.label)}
+                    className="p-1 rounded border border-terminal-border text-terminal-muted hover:text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                    title="Remove from Catalog"
+                  >
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

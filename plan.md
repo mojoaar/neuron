@@ -1,47 +1,55 @@
 # Project Neuron Lifecycle Manager Plan
 
 ## Status
-Build Mode: Active
+Build Mode: Active (Local Continuous Integration)
 
 ## Goal
-Develop a CLI utility managing the full lifecycle of AI development projects, binding conceptual models to technical implementations.
+Develop a single-binary workspace lifecycle manager and JSON-RPC MCP server with an embedded, dynamic Next.js Web HUD Dashboard, enforcing a strict Zero-Footprint Workspace Contract.
 
-## Technical Stack
-*   **Database:** DuckDB (Transactional Local Backend) for persistent local storage of project metadata, skill definitions, and generated TODO items.
-*   **CLI/TUI Backend:** Go (Golang) for the control plane and interactive TUI interface.
+---
 
-## Key Components
-*   **Interface (CLI):** Serves as the central control plane for project tasks and lifecycle management.
-*   **TUI:** Provides a visual interface for provisioning and managing projects using the data/rules defined by the Lifecycle Manager.
-*   **Skills Model:** Conceptual entities stored in DuckDB, mapping to specific code execution paths.
+## 🔍 Code Review & Architectural Analysis (June 2026)
 
-## Design and Scaffolding Principles
+### 1. Code Quality Findings
+*   **Monolithic Frontend Component**: `frontend/src/app/page.tsx` was a massive 3,432-line single React component managing 46+ separate states and complex REST fetching hooks under one scope. Requires modularization and decomposition into separate components, React Hooks, and a dedicated service layer.
+*   **Duplicate Script Exporters**: Identical implementation of `exportToGoMakefile` and `exportToNodePackageJSON` resided in both `internal/cmd/skill.go` and `internal/web/server.go`. Needs consolidation into a single helper module.
+*   **Repeated Tech-Stack Mapping**: The list of 7 technical stacks is repeated in 5 separate validation/logic locations in both backend and frontend.
 
-*   **Zero Proprietary Footprint:** Neuron must not leave any proprietary or hidden metadata/config files (like `.neuron/` or `neuron.yaml`) in the generated projects.
-*   **Agent-Ready Output:** The generated projects must be completely clean, standard, and idiomatic for their respective tech stacks (e.g., standard `go.mod` for Go, `package.json` for Node.js).
-*   **High-Signal AGENTS.md Generation:** Instead of leaving empty directories or proprietary configs, Neuron scaffolds a standard, highly curated `AGENTS.md` (and a symlink to `CLAUDE.md` for Anthropic tools) at the project root. This file provides precise, non-inferable technical details (e.g., exact tech stack versions, custom test commands, coding style rules, and safety boundaries like "Always", "Ask First", and "Never") tailored to the chosen scaffold template.
-*   **Interoperability:** This zero-footprint approach ensures other AI tools and agents (e.g., Claude TUI, OpenCode TUI, Cursor, Copilot) can work seamlessly with the generated repositories out-of-the-box by reading the standard `AGENTS.md` file.
+### 2. Security & Penetration Findings
+*   **XSS Vulnerability (P0)**: Hand-rolled line-by-line Markdown compiler (`renderMarkdown`) rendered plans directly into HTML via `dangerouslySetInnerHTML`. Lacked proper HTML attribute escaping, allowing malicious event triggers (`onerror`, `onclick`) or standard `javascript:` URL injection paths.
+*   **Unvalidated Remote File Execution**: The custom Skills downloader downloads templates directly from `agentskill.sh` and writes files to user workspace locations with no size boundaries, path-traversal sanitization, or file whitelists.
+*   **PID File Terminations**: The PID stop daemon checks PIDs blindly without confirming the target process name is actually `neuron`, creating theoretical local process namespace termination collisions.
 
-## Implementation Phases
+### 3. Deprecated & Outdated Package Analysis
+*   **Unusual Go Compiler Declaration**: `go.mod` declared forward-looking `go 1.26.4`. Standard stable toolchains are at `1.24` as of early 2026.
+*   **Outdated Roadmap Documents**: The `plan.md` and `README.md` documents referenced Bubble Tea TUI command lists, which were decommissioned in v1.4.0.
 
-### Phase 1: Foundation (CLI & DuckDB Backend)
-*   Initialize Go module and CLI scaffolding.
-*   Design and deploy the DuckDB database schema.
-*   Implement local transactional persistence for projects, tasks, and skill definitions.
+---
 
-### Phase 2: Project Scaffolding & Agent-Ready Generation
-*   Implement the `neuron init` command.
-*   Create clean scaffolding templates (e.g., Go, Node.js).
-*   Implement automated generation of high-signal, template-specific `AGENTS.md` files and `CLAUDE.md` symlinks (following the Augment Code 2026 guidelines).
+## 🗺️ Roadmap & Prioritized Backlog
 
-### Phase 3: Skills Engine & Script Export
-*   Design the skills registration and execution engine.
-*   Implement exporting database skills into standard task-runner files (e.g., `Makefile`, `package.json`, or a `./scripts/` directory).
+### P0: Architecture & Core Refinement (In Progress)
+*   [ ] **P0-A: Secure Markdown Rendering**: Eradicate the custom parser and compile Next.js with verified, sanitized standard libraries (`react-markdown` + `rehype-sanitize`).
+*   [ ] **P0-B: Component Decomposition & Modularization**: Split the 3,400+ line `page.tsx` React component into separate modular folders:
+    *   `/components` (Sidebar, Settings, Terminal, ProjectDashboard, Sandbox, DocReader)
+    *   `/hooks` (isolated states for tasks, skills, projects, logging, sandbox, command palette)
+    *   `/services` (unified REST fetch controller)
+    *   `/types` (consolidated TypeScript definitions)
 
-### Phase 4: Model Context Protocol (MCP) Server
-*   Implement a global MCP server in Go (`neuron mcp start`).
-*   Expose dynamic lists of active projects, tasks, and skills directly to MCP-compliant agents (like Claude TUI).
+### P1: Security Hardening & Consolidation
+*   [ ] **P1-A: Skill Download Verification**: Sandboxing of remote downloads. Validate content boundaries, deny path-traversal slugs (`../`), and reject non-plaintext files.
+*   [ ] **P1-B: Duplicate Exporters Merger**: Refactor command and web exporters into a shared Go package.
+*   [ ] **P1-C: Tech Stack Single Source of Truth**: Centralize tech stack definitions inside an internal Go registry package.
 
-### Phase 5: Interactive TUI
-*   Develop a beautiful, interactive Terminal User Interface (TUI) using Go (e.g., Bubble Tea) for project provisioning, task management, and visual lifecycle tracking.
+### P2: High-Value Features
+*   [ ] **P2-A: CLI Project Deletion**: Implement the missing `neuron project delete` subcommand in Go.
+*   [ ] **P2-B: Multi-Project Clusters**: Allow grouping and scanning related folders into Clusters for bulk overview tracking.
+*   [ ] **P2-C: HUD Testing Dashboard**: Visual aggregate output of test suites inside the project HUD console.
 
+---
+
+## 🛠️ Verification Commands
+*   Run local asset pipeline and static export compilation:
+    ```bash
+    make build
+    ```
