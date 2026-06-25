@@ -238,7 +238,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               </div>
               <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border" style={{ fontSize: tabEditorFontSize }}>
                 {planContent ? (
-                  <MarkdownRenderer content={planContent} />
+                  <MarkdownRenderer content={planContent} style={{ fontSize: tabEditorFontSize }} />
                 ) : (
                   <div className="text-center p-8 text-terminal-muted italic text-xs">Plan content empty.</div>
                 )}
@@ -277,7 +277,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               </div>
               <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border" style={{ fontSize: tabEditorFontSize }}>
                 {rulesContent ? (
-                  <MarkdownRenderer content={rulesContent} />
+                  <MarkdownRenderer content={rulesContent} style={{ fontSize: tabEditorFontSize }} />
                 ) : (
                   <div className="text-center p-8 text-terminal-muted italic text-xs">Rules content empty.</div>
                 )}

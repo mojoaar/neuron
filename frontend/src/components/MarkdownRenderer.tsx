@@ -6,6 +6,7 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 // Extend defaultSchema to allow checkboxes (for TODO list checklists in plan.md)
@@ -18,9 +19,12 @@ const customSchema = {
   tagNames: [...(defaultSchema.tagNames || []), "input"],
 };
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = "" }) => {
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = "", style }) => {
   return (
-    <div className={`prose prose-invert prose-xs max-w-none font-mono text-[11px] leading-relaxed text-terminal-text ${className}`}>
+    <div 
+      className={`prose prose-invert prose-xs max-w-none font-mono text-[11px] leading-relaxed text-terminal-text ${className}`}
+      style={style}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, customSchema]]}
