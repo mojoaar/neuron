@@ -79,6 +79,7 @@ interface ProjectDashboardProps {
   checkStatus: CheckStatus | null;
   isRefreshingCheck: boolean;
   onRefreshCheck: (id: string) => void;
+  enableVerificationCi: boolean;
 }
 
 export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
@@ -144,6 +145,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   checkStatus,
   isRefreshingCheck,
   onRefreshCheck,
+  enableVerificationCi,
 }) => {
   const getTaskPriorityBorder = (prio: string) => {
     switch (prio) {
@@ -185,74 +187,76 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       </div>
 
       {/* CI Test & Lint Verification Status Bar */}
-      <div className="px-6 py-2 border-b border-terminal-border/40 bg-terminal-dark flex flex-col shrink-0 text-[11px] text-terminal-muted">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <span className="font-bold text-terminal-text uppercase text-[10px] tracking-wider select-none">[ Verification CI ]</span>
-            
-            {/* Test Suite badge */}
-            <button
-              type="button"
-              onClick={() => setShowCheckDetails(!showCheckDetails)}
-              className="flex items-center space-x-1.5 select-none hover:opacity-85"
-            >
-              <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase border font-bold cursor-pointer transition-all ${
-                checkStatus 
-                  ? checkStatus.test_passed 
-                    ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
-                    : "border-red-500/30 text-red-500 bg-red-500/5 hover:border-red-500/60"
-                  : "border-terminal-border text-terminal-muted bg-terminal-black/30"
-              }`}>
-                Tests: {checkStatus ? (checkStatus.test_passed ? "PASS" : "FAIL") : "UNRUN"}
-              </span>
-            </button>
+      {enableVerificationCi && (
+        <div className="px-6 py-2 border-b border-terminal-border/40 bg-terminal-dark flex flex-col shrink-0 text-[11px] text-terminal-muted">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="font-bold text-terminal-text uppercase text-[10px] tracking-wider select-none">[ Verification CI ]</span>
+              
+              {/* Test Suite badge */}
+              <button
+                type="button"
+                onClick={() => setShowCheckDetails(!showCheckDetails)}
+                className="flex items-center space-x-1.5 select-none hover:opacity-85"
+              >
+                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase border font-bold cursor-pointer transition-all ${
+                  checkStatus 
+                    ? checkStatus.test_passed 
+                      ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
+                      : "border-red-500/30 text-red-500 bg-red-500/5 hover:border-red-500/60"
+                    : "border-terminal-border text-terminal-muted bg-terminal-black/30"
+                }`}>
+                  Tests: {checkStatus ? (checkStatus.test_passed ? "PASS" : "FAIL") : "UNRUN"}
+                </span>
+              </button>
 
-            {/* Linter suite badge */}
+              {/* Linter suite badge */}
+              <button
+                type="button"
+                onClick={() => setShowCheckDetails(!showCheckDetails)}
+                className="flex items-center space-x-1.5 select-none hover:opacity-85"
+              >
+                <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase border font-bold cursor-pointer transition-all ${
+                  checkStatus 
+                    ? checkStatus.lint_passed 
+                      ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
+                      : "border-yellow-500/30 text-yellow-500 bg-yellow-500/5 hover:border-yellow-500/60"
+                    : "border-terminal-border text-terminal-muted bg-terminal-black/30"
+                }`}>
+                  Lint: {checkStatus ? (checkStatus.lint_passed ? "PASS" : "WARN") : "UNRUN"}
+                </span>
+              </button>
+            </div>
+
             <button
-              type="button"
-              onClick={() => setShowCheckDetails(!showCheckDetails)}
-              className="flex items-center space-x-1.5 select-none hover:opacity-85"
+              onClick={() => onRefreshCheck(selectedProject.id)}
+              disabled={isRefreshingCheck}
+              className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
+              title="Execute Linter and Testing Suites"
             >
-              <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase border font-bold cursor-pointer transition-all ${
-                checkStatus 
-                  ? checkStatus.lint_passed 
-                    ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
-                    : "border-yellow-500/30 text-yellow-500 bg-yellow-500/5 hover:border-yellow-500/60"
-                  : "border-terminal-border text-terminal-muted bg-terminal-black/30"
-              }`}>
-                Lint: {checkStatus ? (checkStatus.lint_passed ? "PASS" : "WARN") : "UNRUN"}
-              </span>
+              <RefreshCw className={`w-3 h-3 ${isRefreshingCheck ? "animate-spin text-terminal-green" : ""}`} />
             </button>
           </div>
 
-          <button
-            onClick={() => onRefreshCheck(selectedProject.id)}
-            disabled={isRefreshingCheck}
-            className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
-            title="Execute Linter and Testing Suites"
-          >
-            <RefreshCw className={`w-3 h-3 ${isRefreshingCheck ? "animate-spin text-terminal-green" : ""}`} />
-          </button>
+          {/* Collapsible details output tray */}
+          {showCheckDetails && checkStatus && (
+            <div className="mt-3 grid grid-cols-2 gap-4 max-h-56 overflow-hidden select-text border-t border-terminal-border/20 pt-3">
+              <div className="flex flex-col space-y-1 overflow-hidden">
+                <span className="text-[9px] font-bold text-terminal-muted uppercase">[ Test suite stdout / stderr ]</span>
+                <pre className="flex-1 bg-terminal-black border border-terminal-border rounded p-2.5 text-[9px] font-mono overflow-auto leading-relaxed text-terminal-text">
+                  <code>{checkStatus.test_output || "No output captured."}</code>
+                </pre>
+              </div>
+              <div className="flex flex-col space-y-1 overflow-hidden">
+                <span className="text-[9px] font-bold text-terminal-muted uppercase">[ Linter stdout / stderr ]</span>
+                <pre className="flex-1 bg-terminal-black border border-terminal-border rounded p-2.5 text-[9px] font-mono overflow-auto leading-relaxed text-terminal-text">
+                  <code>{checkStatus.lint_output || "No output captured."}</code>
+                </pre>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Collapsible details output tray */}
-        {showCheckDetails && checkStatus && (
-          <div className="mt-3 grid grid-cols-2 gap-4 max-h-56 overflow-hidden select-text border-t border-terminal-border/20 pt-3">
-            <div className="flex flex-col space-y-1 overflow-hidden">
-              <span className="text-[9px] font-bold text-terminal-muted uppercase">[ Test suite stdout / stderr ]</span>
-              <pre className="flex-1 bg-terminal-black border border-terminal-border rounded p-2.5 text-[9px] font-mono overflow-auto leading-relaxed text-terminal-text">
-                <code>{checkStatus.test_output || "No output captured."}</code>
-              </pre>
-            </div>
-            <div className="flex flex-col space-y-1 overflow-hidden">
-              <span className="text-[9px] font-bold text-terminal-muted uppercase">[ Linter stdout / stderr ]</span>
-              <pre className="flex-1 bg-terminal-black border border-terminal-border rounded p-2.5 text-[9px] font-mono overflow-auto leading-relaxed text-terminal-text">
-                <code>{checkStatus.lint_output || "No output captured."}</code>
-              </pre>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Tabs list */}
       <div className="flex border-b border-terminal-border bg-terminal-dark/50 shrink-0">

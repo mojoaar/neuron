@@ -38,6 +38,8 @@ export const useNeuron = () => {
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [checkStatus, setCheckStatus] = useState<CheckStatus | null>(null);
   const [isRefreshingCheck, setIsRefreshingCheck] = useState(false);
+  const [enableProjectClusters, setEnableProjectClusters] = useState(false);
+  const [enableVerificationCi, setEnableVerificationCi] = useState(false);
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -222,6 +224,8 @@ export const useNeuron = () => {
     fetchHiddenProjectIds();
     fetchTerminalSettings();
     fetchTabEditorFontSize();
+    fetchClusterSettings();
+    fetchCiSettings();
     fetchClusters();
     fetchDiscoveredDirs();
     fetchProjects(true);
@@ -523,6 +527,64 @@ export const useNeuron = () => {
       }
     } catch (err) {
       console.error("Failed to load editor font size:", err);
+    }
+  };
+
+  const fetchClusterSettings = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=enable_project_clusters");
+      if (res.ok) {
+        const data = await res.json();
+        setEnableProjectClusters(data.value === "true");
+      }
+    } catch (err) {
+      console.error("Failed to load cluster settings:", err);
+    }
+  };
+
+  const fetchCiSettings = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=enable_verification_ci");
+      if (res.ok) {
+        const data = await res.json();
+        setEnableVerificationCi(data.value === "true");
+      }
+    } catch (err) {
+      console.error("Failed to load CI settings:", err);
+    }
+  };
+
+  const handleToggleEnableProjectClusters = async (val: boolean) => {
+    setEnableProjectClusters(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "enable_project_clusters",
+          value: val ? "true" : "false",
+        }),
+      });
+      addLog(`SUCCESS: Project Clusters panel visibility updated: ${val ? "ENABLED" : "DISABLED"}`, "success");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleEnableVerificationCi = async (val: boolean) => {
+    setEnableVerificationCi(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "enable_verification_ci",
+          value: val ? "true" : "false",
+        }),
+      });
+      addLog(`SUCCESS: Verification CI dashboard bar visibility updated: ${val ? "ENABLED" : "DISABLED"}`, "success");
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -1168,6 +1230,10 @@ export const useNeuron = () => {
     setTerminalCollapsedByDefault,
     tabEditorFontSize,
     setTabEditorFontSize,
+    enableProjectClusters,
+    setEnableProjectClusters,
+    enableVerificationCi,
+    setEnableVerificationCi,
     clusters,
     selectedCluster,
     setSelectedCluster,
@@ -1288,6 +1354,8 @@ export const useNeuron = () => {
     handleResetScopePath,
     handleSaveTemplate,
     handleToggleTerminalCollapseDefault,
+    handleToggleEnableProjectClusters,
+    handleToggleEnableVerificationCi,
     handleSetTabEditorFontSize,
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,

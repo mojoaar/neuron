@@ -58,7 +58,7 @@ export const DocsReader: React.FC<DocsReaderProps> = ({
       </div>
 
       {/* Chapter markdown body reader */}
-      <div className="flex-1 p-6 overflow-y-auto max-w-3xl mx-auto w-full">
+      <div className="flex-1 p-6 overflow-y-auto w-full">
         {currentChapter ? (
           <div className="border border-terminal-border bg-terminal-dark rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
             <MarkdownRenderer content={currentChapter.data} style={{ fontSize: tabEditorFontSize }} />

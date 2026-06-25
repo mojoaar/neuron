@@ -69,7 +69,7 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
       </div>
 
       {/* Main execute dashboard */}
-      <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-6 max-w-4xl mx-auto w-full">
+      <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-6 w-full">
         <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
           <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
             <div className="flex items-center space-x-2 text-terminal-green">

@@ -50,6 +50,10 @@ interface SystemSettingsProps {
   projects: Project[];
   hiddenProjectIds: string[];
   onUnhideProject: (id: string) => void;
+  enableProjectClusters: boolean;
+  onToggleEnableProjectClusters: (val: boolean) => void;
+  enableVerificationCi: boolean;
+  onToggleEnableVerificationCi: (val: boolean) => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -90,9 +94,13 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   projects,
   hiddenProjectIds,
   onUnhideProject,
+  enableProjectClusters,
+  onToggleEnableProjectClusters,
+  enableVerificationCi,
+  onToggleEnableVerificationCi,
 }) => {
   return (
-    <div className="flex-1 p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full font-mono">
+    <div className="flex-1 p-6 overflow-y-auto space-y-6 w-full font-mono">
       {/* Scope Settings */}
       <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
@@ -167,6 +175,38 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             <option value="15px">15px</option>
             <option value="17px">17px</option>
           </select>
+        </div>
+
+        {/* Toggle enable project clusters setting */}
+        <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-terminal-text">[ Enable Project Clusters ]</div>
+            <p className="text-[10px] text-terminal-muted leading-relaxed">Toggle the visibility of the multi-project Clusters section inside your sidebar panel.</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={enableProjectClusters}
+              onChange={(e) => onToggleEnableProjectClusters(e.target.checked)}
+              className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+            />
+          </label>
+        </div>
+
+        {/* Toggle enable verification CI setting */}
+        <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-terminal-text">[ Enable Verification CI Bar ]</div>
+            <p className="text-[10px] text-terminal-muted leading-relaxed">Toggle the visibility of the interactive unit testing & linting Verification CI panel inside your project dashboard.</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={enableVerificationCi}
+              onChange={(e) => onToggleEnableVerificationCi(e.target.checked)}
+              className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+            />
+          </label>
         </div>
       </div>
 

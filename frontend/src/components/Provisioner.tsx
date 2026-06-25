@@ -59,17 +59,6 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
         className="flex-1 max-w-xl border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0"
         style={{ boxShadow: darkMode ? "0 0 20px rgba(0,0,0,0.8)" : "0 0 20px rgba(0,0,0,0.06)" }}
       >
-        {/* Visual grid background */}
-        <div 
-          className="absolute inset-0 pointer-events-none rounded-lg"
-          style={{
-            backgroundSize: "16px 16px",
-            backgroundImage: darkMode 
-              ? "linear-gradient(rgba(18,18,18,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(18,18,18,0.3) 1px, transparent 1px)"
-              : "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)"
-          }}
-        />
-
         <div className="relative">
           <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border pb-3 mb-4">
             <Sparkles className="w-5 h-5 animate-pulse" />

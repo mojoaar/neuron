@@ -395,13 +395,7 @@ func (s *Storage) prepopulateSystemTables() error {
 		}
 	}
 
-	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM skill_catalog;").Scan(&count)
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		skills := []CatalogSkill{
+	skills := []CatalogSkill{
 			// Next.js
 			{URL: "https://agentskill.sh/@affaan-m/nextjs-turbopack", Label: "Next.js Turbopack", TechStack: "nextjs", IsChecked: true},
 			{URL: "https://agentskill.sh/@davila7/nextjs-app-router-patterns", Label: "Next.js App Router Patterns", TechStack: "nextjs", IsChecked: true},
@@ -478,13 +472,16 @@ func (s *Storage) prepopulateSystemTables() error {
 		}
 
 		for _, sk := range skills {
-			query := "INSERT INTO skill_catalog (url, label, tech_stack, is_checked, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP);"
+			query := `
+				INSERT INTO skill_catalog (url, label, tech_stack, is_checked, updated_at)
+				VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+				ON CONFLICT(url) DO UPDATE SET label = excluded.label, tech_stack = excluded.tech_stack;
+			`
 			_, err = s.db.ExecContext(ctx, query, sk.URL, sk.Label, sk.TechStack, sk.IsChecked)
 			if err != nil {
-				return fmt.Errorf("failed to prepopulate skill %s: %w", sk.URL, err)
+				return fmt.Errorf("failed to prepopulate/upsert skill %s: %w", sk.URL, err)
 			}
 		}
-	}
 
 	return nil
 }

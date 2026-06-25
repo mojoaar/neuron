@@ -57,6 +57,9 @@ export default function Page() {
           selectedCluster={state.selectedCluster}
           onSelectCluster={state.handleSelectCluster}
           onRefreshClusters={state.fetchClusters}
+          enableProjectClusters={state.enableProjectClusters}
+          showDbViewer={state.showDbViewer}
+          setShowDbViewer={state.setShowDbViewer}
         />
 
         {/* Dynamic Inner Panel Viewport */}
@@ -127,6 +130,10 @@ export default function Page() {
               projects={state.projects}
               hiddenProjectIds={state.hiddenProjectIds}
               onUnhideProject={state.handleUnhideProject}
+              enableProjectClusters={state.enableProjectClusters}
+              onToggleEnableProjectClusters={state.handleToggleEnableProjectClusters}
+              enableVerificationCi={state.enableVerificationCi}
+              onToggleEnableVerificationCi={state.handleToggleEnableVerificationCi}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard
@@ -224,6 +231,7 @@ export default function Page() {
               checkStatus={state.checkStatus}
               isRefreshingCheck={state.isRefreshingCheck}
               onRefreshCheck={state.fetchCheckStatus}
+              enableVerificationCi={state.enableVerificationCi}
             />
           )}
         </div>
