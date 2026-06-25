@@ -54,7 +54,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({
         <div className="flex items-center space-x-4">
           <button onClick={onClearLogs} className="hover:text-terminal-text">[ CLEAR ]</button>
           <button onClick={() => setIsTerminalCollapsed(!isTerminalCollapsed)}>
-            {isTerminalCollapsed ? "[ COLLAPSE: FALSE ]" : "[ COLLAPSE: TRUE ]"}
+            {isTerminalCollapsed ? "[ EXPAND ]" : "[ COLLAPSE ]"}
           </button>
         </div>
       </div>
