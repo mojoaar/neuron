@@ -1,6 +1,6 @@
 module neuron
 
-go 1.26.4
+go 1.25.5
 
 require (
 	github.com/duckdb/duckdb-go/v2 v2.10504.0

@@ -55,8 +55,14 @@ var (
 			}
 
 			// If not in daemon mode, write the current parent PID to the file
-			_ = os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
-			defer os.Remove(pidFile)
+			if err := os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644); err != nil {
+				fmt.Printf("Warning: failed to write PID file: %v\n", err)
+			}
+			defer func() {
+				if err := os.Remove(pidFile); err != nil {
+					fmt.Printf("Warning: failed to remove PID file: %v\n", err)
+				}
+			}()
 
 			srv := web.NewServer(store, uiPort)
 			return srv.Start()

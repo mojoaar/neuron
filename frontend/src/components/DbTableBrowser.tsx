@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Database, RefreshCw, FileText, Table } from "lucide-react";
+import { Database, RefreshCw, Table, Trash, Eye } from "lucide-react";
 import { DbTableData } from "../types";
 
-export const DbTableBrowser: React.FC = () => {
+interface DbTableBrowserProps {
+  hiddenProjectIds: string[];
+  onUnhideProject: (id: string) => void;
+  onRefreshProjectsList: () => void;
+}
+
+export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
+  hiddenProjectIds,
+  onUnhideProject,
+  onRefreshProjectsList,
+}) => {
   const [tables, setDbTables] = useState<string[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [tableData, setDbTableData] = useState<DbTableData | null>(null);
   const [isListing, setIsListing] = useState(false);
   const [isQuerying, setIsQuerying] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchTables = async () => {
     setIsListing(true);
@@ -16,7 +27,7 @@ export const DbTableBrowser: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         setDbTables(data || []);
-        if (data && data.length > 0) {
+        if (data && data.length > 0 && !selectedTable) {
           setSelectedTable(data[0]);
         }
       }
@@ -43,6 +54,22 @@ export const DbTableBrowser: React.FC = () => {
     }
   };
 
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const res = await fetch(`/api/system/db/table?name=projects&id=${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeletingId(null);
+        // Refresh both local and global sidebar state!
+        await fetchTableData(selectedTable);
+        onRefreshProjectsList();
+      }
+    } catch (err) {
+      console.error("Failed to delete project:", err);
+    }
+  };
+
   useEffect(() => {
     fetchTables();
   }, []);
@@ -52,6 +79,8 @@ export const DbTableBrowser: React.FC = () => {
       fetchTableData(selectedTable);
     }
   }, [selectedTable]);
+
+  const isProjectsTable = selectedTable === "projects";
 
   return (
     <div className="flex-1 overflow-hidden flex font-mono">
@@ -112,7 +141,7 @@ export const DbTableBrowser: React.FC = () => {
             </div>
 
             {/* Scrollable Data Table Grid */}
-            <div className="flex-1 overflow-auto border border-terminal-border bg-terminal-black rounded">
+            <div className="flex-1 overflow-auto border border-terminal-border bg-terminal-black rounded scrollbar-thin">
               {isQuerying ? (
                 <div className="flex flex-col items-center justify-center p-12 text-terminal-muted text-xs space-y-2">
                   <RefreshCw className="w-6 h-6 animate-spin text-terminal-green" />
@@ -133,39 +162,103 @@ export const DbTableBrowser: React.FC = () => {
                               {col}
                             </th>
                           ))}
+                          {isProjectsTable && (
+                            <th className="px-3.5 py-2.5 font-bold uppercase text-terminal-green">
+                              ACTIONS
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
                         {rows.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={tableData.columns.length}
+                              colSpan={tableData.columns.length + (isProjectsTable ? 1 : 0)}
                               className="px-4 py-8 text-center text-terminal-muted italic"
                             >
                               Table empty. No rows found.
                             </td>
                           </tr>
                         ) : (
-                          rows.map((row, rIdx) => (
-                            <tr
-                              key={rIdx}
-                              className="border-b border-terminal-border/20 last:border-b-0 hover:bg-terminal-gray/25 transition-colors"
-                            >
-                              {row.map((cell, cIdx) => {
-                                const strVal = cell === null || cell === undefined ? "NULL" : String(cell);
-                                const isLong = strVal.length > 50;
-                                return (
-                                  <td
-                                    key={cIdx}
-                                    className="px-3.5 py-2.5 border-r border-terminal-border/20 last:border-r-0 max-w-xs truncate text-terminal-text select-text"
-                                    title={strVal}
-                                  >
-                                    {isLong ? `${strVal.slice(0, 50)}...` : strVal}
+                          rows.map((row, rIdx) => {
+                            // First column is the Project ID in 'projects' table
+                            const projectId = isProjectsTable ? String(row[0]) : "";
+                            const isHidden = isProjectsTable && hiddenProjectIds.includes(projectId);
+
+                            return (
+                              <tr
+                                key={rIdx}
+                                className="border-b border-terminal-border/20 last:border-b-0 hover:bg-terminal-gray/25 transition-colors"
+                              >
+                                {row.map((cell, cIdx) => {
+                                  const strVal = cell === null || cell === undefined ? "NULL" : String(cell);
+                                  const isLong = strVal.length > 50;
+                                  return (
+                                    <td
+                                      key={cIdx}
+                                      className="px-3.5 py-2.5 border-r border-terminal-border/20 last:border-r-0 max-w-xs truncate text-terminal-text select-text"
+                                      title={strVal}
+                                    >
+                                      {isProjectsTable && cIdx === 1 && isHidden ? (
+                                        <span className="flex items-center space-x-1.5">
+                                          <span className="text-terminal-muted line-through">{strVal}</span>
+                                          <span className="text-[8px] font-bold border border-terminal-muted/40 text-terminal-muted bg-terminal-muted/5 px-1 rounded">HIDDEN</span>
+                                        </span>
+                                      ) : (
+                                        isLong ? `${strVal.slice(0, 50)}...` : strVal
+                                      )}
+                                    </td>
+                                  );
+                                })}
+
+                                {isProjectsTable && (
+                                  <td className="px-3.5 py-2 text-left">
+                                    {deletingId === projectId ? (
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-[9px] text-red-500 font-bold uppercase animate-pulse">DELETE ALL DATA?</span>
+                                        <button
+                                          onClick={() => handleDeleteProject(projectId)}
+                                          className="bg-red-500 hover:bg-red-600 text-white font-bold text-[9px] px-2 py-0.5 rounded transition-all"
+                                        >
+                                          CONFIRM
+                                        </button>
+                                        <button
+                                          onClick={() => setDeletingId(null)}
+                                          className="border border-terminal-border text-terminal-muted hover:text-terminal-text font-bold text-[9px] px-2 py-0.5 rounded transition-all"
+                                        >
+                                          CANCEL
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center space-x-1.5">
+                                        {isHidden ? (
+                                          <button
+                                            onClick={async () => {
+                                              onUnhideProject(projectId);
+                                              // Instantly refresh
+                                              setTimeout(() => fetchTableData(selectedTable), 100);
+                                            }}
+                                            className="px-2 py-0.5 rounded border border-terminal-border bg-terminal-gray hover:border-terminal-green hover:text-terminal-green text-[9px] font-bold uppercase transition-all flex items-center space-x-1"
+                                          >
+                                            <Eye className="w-3 h-3" />
+                                            <span>Restore</span>
+                                          </button>
+                                        ) : null}
+                                        <button
+                                          onClick={() => setDeletingId(projectId)}
+                                          className="px-2 py-0.5 rounded border border-red-950 bg-red-950/20 hover:border-red-500 hover:bg-red-500/10 text-red-500 text-[9px] font-bold uppercase transition-all flex items-center space-x-1"
+                                          title="Permanently Delete Project"
+                                        >
+                                          <Trash className="w-3 h-3" />
+                                          <span>Delete</span>
+                                        </button>
+                                      </div>
+                                    )}
                                   </td>
-                                );
-                              })}
-                            </tr>
-                          ))
+                                )}
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>

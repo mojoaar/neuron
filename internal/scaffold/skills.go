@@ -195,14 +195,18 @@ func EnsureTUICompatibility(projectPath string) error {
 	}
 
 	claudeSkillsSymlink := filepath.Join(claudeDir, "skills")
-	_ = os.Remove(claudeSkillsSymlink) // Remove if already exists
+	if err := os.Remove(claudeSkillsSymlink); err != nil && !os.IsNotExist(err) {
+		fmt.Printf("Warning: failed to clear .claude/skills symlink: %v\n", err)
+	}
 
 	// Create relative symlink: .claude/skills -> ../.agents/skills
 	err := os.Symlink("../.agents/skills", claudeSkillsSymlink)
 	if err != nil {
 		// Fallback for systems without symlink privileges
 		fallbackDir := filepath.Join(claudeDir, "skills")
-		_ = os.MkdirAll(fallbackDir, 0755)
+		if err := os.MkdirAll(fallbackDir, 0755); err != nil {
+			fmt.Printf("Warning: failed to create fallback directory for skills: %v\n", err)
+		}
 	}
 
 	return nil

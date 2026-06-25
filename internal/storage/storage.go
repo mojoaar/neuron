@@ -74,6 +74,21 @@ type Skill struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+// Cluster represents a logical grouping of projects.
+type Cluster struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ClusterProject represents a link in the cluster_projects junction table.
+type ClusterProject struct {
+	ClusterID string    `json:"cluster_id"`
+	ProjectID string    `json:"project_id"`
+	AddedAt   time.Time `json:"added_at"`
+}
+
 // New opens a DuckDB database at the specified path and initializes the schema.
 func New(dbPath string) (*Storage, error) {
 	db, err := sql.Open("duckdb", dbPath)
@@ -200,6 +215,23 @@ func (s *Storage) UpdateTask(ctx context.Context, t *Task) error {
 		return fmt.Errorf("failed to update task: %w", err)
 	}
 	return nil
+}
+
+// GetTask retrieves a single task by ID.
+func (s *Storage) GetTask(ctx context.Context, id string) (*Task, error) {
+	query := `
+		SELECT id, project_id, content, status, priority, git_branch, git_commit, created_at, updated_at
+		FROM tasks
+		WHERE id = ?;
+	`
+	t := &Task{}
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&t.ID, &t.ProjectID, &t.Content, &t.Status, &t.Priority, &t.GitBranch, &t.GitCommit, &t.CreatedAt, &t.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("task not found: %s", id)
+	}
+	return t, nil
 }
 
 // ListTasksByProject lists tasks for a specific project.
@@ -866,4 +898,103 @@ func (s *Storage) QueryTableData(ctx context.Context, tableName string) ([]strin
 	}
 
 	return columns, grid, nil
+}
+
+// AddCluster saves a new cluster.
+func (s *Storage) AddCluster(ctx context.Context, c *Cluster) error {
+	query := `
+		INSERT INTO clusters (id, name, created_at, updated_at)
+		VALUES (?, ?, ?, ?);
+	`
+	now := time.Now()
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = now
+	}
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = now
+	}
+
+	_, err := s.db.ExecContext(ctx, query, c.ID, c.Name, c.CreatedAt, c.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to insert cluster: %w", err)
+	}
+	return nil
+}
+
+// ListClusters retrieves all active clusters.
+func (s *Storage) ListClusters(ctx context.Context) ([]*Cluster, error) {
+	query := "SELECT id, name, created_at, updated_at FROM clusters ORDER BY name ASC;"
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*Cluster
+	for rows.Next() {
+		c := &Cluster{}
+		if err := rows.Scan(&c.ID, &c.Name, &c.CreatedAt, &c.UpdatedAt); err == nil {
+			list = append(list, c)
+		}
+	}
+	return list, nil
+}
+
+// DeleteCluster purges a cluster and all its project mappings.
+func (s *Storage) DeleteCluster(ctx context.Context, id string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM cluster_projects WHERE cluster_id = ?;", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM clusters WHERE id = ?;", id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// AddProjectToCluster binds a project to a cluster.
+func (s *Storage) AddProjectToCluster(ctx context.Context, clusterID, projectID string) error {
+	query := "INSERT INTO cluster_projects (cluster_id, project_id, added_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING;"
+	_, err := s.db.ExecContext(ctx, query, clusterID, projectID)
+	return err
+}
+
+// RemoveProjectFromCluster unbinds a project from a cluster.
+func (s *Storage) RemoveProjectFromCluster(ctx context.Context, clusterID, projectID string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM cluster_projects WHERE cluster_id = ? AND project_id = ?;", clusterID, projectID)
+	return err
+}
+
+// ListClusterProjects retrieves all projects associated with a cluster.
+func (s *Storage) ListClusterProjects(ctx context.Context, clusterID string) ([]*Project, error) {
+	query := `
+		SELECT p.id, p.name, p.path, p.tech_stack, p.created_at, p.updated_at
+		FROM projects p
+		INNER JOIN cluster_projects cp ON p.id = cp.project_id
+		WHERE cp.cluster_id = ?
+		ORDER BY p.name ASC;
+	`
+	rows, err := s.db.QueryContext(ctx, query, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*Project
+	for rows.Next() {
+		p := &Project{}
+		if err := rows.Scan(&p.ID, &p.Name, &p.Path, &p.TechStack, &p.CreatedAt, &p.UpdatedAt); err == nil {
+			list = append(list, p)
+		}
+	}
+	return list, nil
 }

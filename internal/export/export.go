@@ -62,6 +62,9 @@ func ExportToNodePackageJSON(projPath string, skills []*storage.Skill) error {
 	}
 
 	for _, sk := range skills {
+		if oldPath, exists := scripts[sk.Name]; exists && oldPath != sk.ExecutionPath {
+			fmt.Printf("Warning: Skill export is overwriting existing npm script '%s' (was '%v', now '%s')\n", sk.Name, oldPath, sk.ExecutionPath)
+		}
 		scripts[sk.Name] = sk.ExecutionPath
 	}
 	data["scripts"] = scripts

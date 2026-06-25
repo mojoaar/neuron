@@ -106,21 +106,13 @@ func StartServer(store *storage.Storage) error {
 			return mcp.NewToolResultError("Missing required parameters"), nil
 		}
 
-		tasks, err := store.ListTasksByProject(ctx, projectID)
+		targetTask, err := store.GetTask(ctx, taskID)
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Error finding task: %v", err)), nil
+			return mcp.NewToolResultError(fmt.Sprintf("Task '%s' not found: %v", taskID, err)), nil
 		}
 
-		var targetTask *storage.Task
-		for _, t := range tasks {
-			if t.ID == taskID {
-				targetTask = t
-				break
-			}
-		}
-
-		if targetTask == nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Task '%s' not found in project '%s'", taskID, projectID)), nil
+		if targetTask.ProjectID != projectID {
+			return mcp.NewToolResultError("Task does not belong to this project"), nil
 		}
 
 		targetTask.Status = status

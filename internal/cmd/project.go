@@ -59,10 +59,33 @@ var (
 			return nil
 		},
 	}
+
+	projectDeleteCmd = &cobra.Command{
+		Use:   "delete [id]",
+		Short: "Delete a registered project and all associated tasks/skills",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			id := args[0]
+
+			proj, err := store.GetProject(ctx, id)
+			if err != nil {
+				return err
+			}
+
+			if err := store.DeleteProject(ctx, id); err != nil {
+				return err
+			}
+
+			fmt.Printf("Successfully deleted project '%s' (%s) and all associated tasks/skills.\n", proj.Name, id)
+			return nil
+		},
+	}
 )
 
 func init() {
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectAddCmd)
+	projectCmd.AddCommand(projectDeleteCmd)
 	rootCmd.AddCommand(projectCmd)
 }

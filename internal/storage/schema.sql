@@ -53,3 +53,17 @@ CREATE TABLE IF NOT EXISTS system_settings (
     value VARCHAR NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS clusters (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cluster_projects (
+    cluster_id VARCHAR NOT NULL,
+    project_id VARCHAR NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (cluster_id, project_id)
+);

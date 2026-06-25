@@ -21,6 +21,7 @@ interface ProvisionerProps {
   onProvision: (e: React.FormEvent) => void;
   onQuickTrackProject: (dirName: string, dirPath: string, tech: string) => void;
   onRefreshDiscovery: () => void;
+  darkMode: boolean;
 }
 
 export const Provisioner: React.FC<ProvisionerProps> = ({
@@ -41,6 +42,7 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
   onProvision,
   onQuickTrackProject,
   onRefreshDiscovery,
+  darkMode,
 }) => {
   const toggleSkillSelect = (url: string) => {
     if (selectedSkillUrls.includes(url)) {
@@ -53,9 +55,20 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
   return (
     <div className="flex-1 p-8 overflow-y-auto flex items-start justify-center max-w-6xl mx-auto w-full gap-6 font-mono">
       {/* Left Form: Manual Provisioning */}
-      <div className="flex-1 max-w-xl border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+      <div 
+        className="flex-1 max-w-xl border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0"
+        style={{ boxShadow: darkMode ? "0 0 20px rgba(0,0,0,0.8)" : "0 0 20px rgba(0,0,0,0.06)" }}
+      >
         {/* Visual grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,18,18,0.3)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,0.3)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none rounded-lg" />
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-lg"
+          style={{
+            backgroundSize: "16px 16px",
+            backgroundImage: darkMode 
+              ? "linear-gradient(rgba(18,18,18,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(18,18,18,0.3) 1px, transparent 1px)"
+              : "linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px)"
+          }}
+        />
 
         <div className="relative">
           <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border pb-3 mb-4">
@@ -153,7 +166,10 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
       </div>
 
       {/* Right List: Discovered directories */}
-      <div className="w-[450px] border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shadow-[0_0_20px_rgba(0,0,0,0.8)] shrink-0 flex flex-col max-h-[600px]">
+      <div 
+        className="w-[450px] border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0 flex flex-col max-h-[600px]"
+        style={{ boxShadow: darkMode ? "0 0 20px rgba(0,0,0,0.8)" : "0 0 20px rgba(0,0,0,0.06)" }}
+      >
         <div className="flex items-center justify-between border-b border-terminal-border pb-3 mb-4">
           <div className="flex items-center space-x-2 text-terminal-green">
             <Database className="w-5 h-5 animate-pulse" />

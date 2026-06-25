@@ -471,7 +471,9 @@ func GenerateAgentsContext(name, path, tech, agentsTemplate string) error {
 	}
 
 	claudePath := filepath.Join(path, "CLAUDE.md")
-	_ = os.Remove(claudePath)
+	if err := os.Remove(claudePath); err != nil && !os.IsNotExist(err) {
+		fmt.Printf("Warning: failed to clear CLAUDE.md: %v\n", err)
+	}
 	if err := os.Symlink("AGENTS.md", claudePath); err != nil {
 		if errCopy := os.WriteFile(claudePath, []byte(agentsContent), 0644); errCopy != nil {
 			return fmt.Errorf("failed to create symlink and fallback copy: %w", errCopy)

@@ -65,3 +65,18 @@ export interface DbTableData {
   columns: string[];
   rows: any[][];
 }
+
+export interface Cluster {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CheckStatus {
+  test_passed: boolean;
+  test_output: string;
+  lint_passed: boolean;
+  lint_output: string;
+  checked_at: string;
+}

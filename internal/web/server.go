@@ -30,6 +30,7 @@ type Server struct {
 	port       int
 	cwd        string
 	startupCwd string
+	httpServer *http.Server
 }
 
 func NewServer(store *storage.Storage, port int) *Server {
@@ -71,6 +72,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/discover", s.handleDiscover)
 	mux.HandleFunc("/api/system/db/tables", s.handleDbTables)
 	mux.HandleFunc("/api/system/db/table", s.handleDbTable)
+	mux.HandleFunc("/api/clusters", s.handleClusters)
+	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
 
 	// Embed static client
 	sub, err := fs.Sub(frontendFS, "frontend/out")
@@ -118,7 +121,11 @@ func (s *Server) Start() error {
 		openBrowser(fmt.Sprintf("http://%s", addr))
 	}()
 
-	return http.ListenAndServe(addr, mux)
+	s.httpServer = &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+	return s.httpServer.ListenAndServe()
 }
 
 func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
@@ -364,22 +371,14 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 
-			tasks, err := s.store.ListTasksByProject(ctx, projectID)
+			targetTask, err := s.store.GetTask(ctx, taskID)
 			if err != nil {
-				respondError(w, http.StatusInternalServerError, err.Error())
+				respondError(w, http.StatusNotFound, "Task not found: "+err.Error())
 				return
 			}
 
-			var targetTask *storage.Task
-			for _, t := range tasks {
-				if t.ID == taskID {
-					targetTask = t
-					break
-				}
-			}
-
-			if targetTask == nil {
-				respondError(w, http.StatusNotFound, "Task not found")
+			if targetTask.ProjectID != projectID {
+				respondError(w, http.StatusForbidden, "Task does not belong to this project")
 				return
 			}
 
@@ -808,6 +807,56 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			"dirty_files": dirtyFiles,
 		})
 
+	case "check":
+		proj, err := s.store.GetProject(ctx, projectID)
+		if err != nil {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		if r.Method != http.MethodGet {
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
+		timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+
+		var testCmd, lintCmd *exec.Cmd
+
+		switch strings.ToLower(proj.TechStack) {
+		case "go":
+			testCmd = exec.CommandContext(timeoutCtx, "go", "test", "./...")
+			lintCmd = exec.CommandContext(timeoutCtx, "go", "vet", "./...")
+		case "node", "nextjs":
+			testCmd = exec.CommandContext(timeoutCtx, "npm", "test")
+			lintCmd = exec.CommandContext(timeoutCtx, "npm", "run", "lint")
+		case "python":
+			testCmd = exec.CommandContext(timeoutCtx, "python3", "-m", "unittest", "discover")
+			lintCmd = exec.CommandContext(timeoutCtx, "python3", "-m", "pyflakes", ".")
+		case "android":
+			testCmd = exec.CommandContext(timeoutCtx, "./gradlew", "test")
+			lintCmd = exec.CommandContext(timeoutCtx, "./gradlew", "lint")
+		default:
+			testCmd = exec.CommandContext(timeoutCtx, "echo", "No test command configured")
+			lintCmd = exec.CommandContext(timeoutCtx, "echo", "No linter command configured")
+		}
+
+		testCmd.Dir = proj.Path
+		testBytes, _ := testCmd.CombinedOutput()
+		testPassed := testCmd.ProcessState != nil && testCmd.ProcessState.Success()
+
+		lintCmd.Dir = proj.Path
+		lintBytes, _ := lintCmd.CombinedOutput()
+		lintPassed := lintCmd.ProcessState != nil && lintCmd.ProcessState.Success()
+
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"test_passed": testPassed,
+			"test_output": string(testBytes),
+			"lint_passed": lintPassed,
+			"lint_output": string(lintBytes),
+			"checked_at":  time.Now().Format(time.RFC3339),
+		})
+
 	default:
 		respondError(w, http.StatusNotFound, "Not Found")
 	}
@@ -815,7 +864,9 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 
 func generateID() string {
 	b := make([]byte, 8)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto/rand failed to generate secure entropy: " + err.Error())
+	}
 	return hex.EncodeToString(b)
 }
 
@@ -985,7 +1036,9 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 	configData := make(map[string]interface{})
 	data, err := os.ReadFile(configPath)
 	if err == nil {
-		_ = json.Unmarshal(data, &configData)
+		if err := json.Unmarshal(data, &configData); err != nil {
+			fmt.Printf("Warning: failed to parse existing MCP client config file: %v\n", err)
+		}
 	}
 
 	mcpServersRaw, ok := configData["mcpServers"]
@@ -1182,7 +1235,9 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	configDir, err := os.UserConfigDir()
 	if err == nil {
 		pidFile := filepath.Join(configDir, "neuron", "neuron.pid")
-		_ = os.Remove(pidFile)
+		if err := os.Remove(pidFile); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("Warning: failed to remove PID file on shutdown: %v\n", err)
+		}
 	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
@@ -1194,6 +1249,19 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		time.Sleep(500 * time.Millisecond)
 		fmt.Println("Graceful shutdown requested via Web HUD. Terminating server process.")
+
+		// Drain in-flight connections gracefully
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if s.httpServer != nil {
+			_ = s.httpServer.Shutdown(ctx)
+		}
+
+		// Close DuckDB database connections and release exclusive lock
+		if s.store != nil {
+			_ = s.store.Close()
+		}
+
 		os.Exit(0)
 	}()
 }
@@ -1325,25 +1393,156 @@ func (s *Server) handleDbTables(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDbTable(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	if r.Method != http.MethodGet {
-		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
-
 	tableName := r.URL.Query().Get("name")
 	if tableName == "" {
 		respondError(w, http.StatusBadRequest, "Missing name query parameter")
 		return
 	}
 
-	columns, rows, err := s.store.QueryTableData(ctx, tableName)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+	switch r.Method {
+	case http.MethodGet:
+		columns, rows, err := s.store.QueryTableData(ctx, tableName)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"columns": columns,
+			"rows":    rows,
+		})
+
+	case http.MethodDelete:
+		if tableName != "projects" {
+			respondError(w, http.StatusBadRequest, "Deletion only allowed for projects table")
+			return
+		}
+
+		projectID := r.URL.Query().Get("id")
+		if projectID == "" {
+			respondError(w, http.StatusBadRequest, "Missing project id query parameter")
+			return
+		}
+
+		if err := s.store.DeleteProject(ctx, projectID); err != nil {
+			respondError(w, http.StatusInternalServerError, "Failed to delete project: "+err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+	default:
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	switch r.Method {
+	case http.MethodGet:
+		clusters, err := s.store.ListClusters(ctx)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondJSON(w, http.StatusOK, clusters)
+
+	case http.MethodPost:
+		var req struct {
+			Name string `json:"name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			respondError(w, http.StatusBadRequest, "Invalid request payload")
+			return
+		}
+
+		req.Name = strings.TrimSpace(req.Name)
+		if req.Name == "" {
+			respondError(w, http.StatusBadRequest, "Missing cluster name")
+			return
+		}
+
+		c := &storage.Cluster{
+			ID:   generateID(),
+			Name: req.Name,
+		}
+
+		if err := s.store.AddCluster(ctx, c); err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusCreated, c)
+
+	default:
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+func (s *Server) handleClusterSubroutes(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/clusters/"), "/")
+	if len(parts) < 1 || parts[0] == "" {
+		respondError(w, http.StatusNotFound, "Not Found")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"columns": columns,
-		"rows":    rows,
-	})
+	clusterID := parts[0]
+
+	// /{id}/projects sub-route
+	if len(parts) > 1 && parts[1] == "projects" {
+		switch r.Method {
+		case http.MethodGet:
+			projects, err := s.store.ListClusterProjects(ctx, clusterID)
+			if err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, projects)
+
+		case http.MethodPost:
+			var req struct {
+				ProjectID string `json:"project_id"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid request payload")
+				return
+			}
+
+			if err := s.store.AddProjectToCluster(ctx, clusterID, req.ProjectID); err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+		case http.MethodDelete:
+			projectID := r.URL.Query().Get("project_id")
+			if projectID == "" {
+				respondError(w, http.StatusBadRequest, "Missing project_id query parameter")
+				return
+			}
+
+			if err := s.store.RemoveProjectFromCluster(ctx, clusterID, projectID); err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+		default:
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+		return
+	}
+
+	// Direct /{id} route
+	if r.Method == http.MethodDelete {
+		if err := s.store.DeleteCluster(ctx, clusterID); err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+		return
+	}
+
+	respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 }

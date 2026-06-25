@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint } from "../types";
+import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus } from "../types";
 import { API_ENDPOINTS } from "../lib/endpoints";
 
 export const useNeuron = () => {
@@ -32,6 +32,12 @@ export const useNeuron = () => {
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [terminalCollapsedByDefault, setTerminalCollapsedByDefault] = useState(false);
   const [tabEditorFontSize, setTabEditorFontSize] = useState("11px");
+
+  // Clusters & CI Check states
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
+  const [checkStatus, setCheckStatus] = useState<CheckStatus | null>(null);
+  const [isRefreshingCheck, setIsRefreshingCheck] = useState(false);
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -81,7 +87,17 @@ export const useNeuron = () => {
   const [provName, setProvName] = useState("");
   const [provPath, setProvPath] = useState("");
   const [provTech, setProvTech] = useState("go");
-  const [selectedSkillUrls, setSelectedSkillUrls] = useState<string[]>([]);
+  const [skillSelectionsByStack, setSkillSelectionsByStack] = useState<Record<string, string[]>>({});
+
+  const selectedSkillUrls = skillSelectionsByStack[provTech] || [];
+
+  const setSelectedSkillUrls = (urls: string[] | ((prev: string[]) => string[])) => {
+    setSkillSelectionsByStack((prev) => {
+      const current = prev[provTech] || [];
+      const updated = typeof urls === "function" ? urls(current) : urls;
+      return { ...prev, [provTech]: updated };
+    });
+  };
 
   // New task form state
   const [newTaskContent, setNewTaskContent] = useState("");
@@ -206,6 +222,7 @@ export const useNeuron = () => {
     fetchHiddenProjectIds();
     fetchTerminalSettings();
     fetchTabEditorFontSize();
+    fetchClusters();
     fetchDiscoveredDirs();
     fetchProjects(true);
   }, []);
@@ -237,12 +254,61 @@ export const useNeuron = () => {
     }
   }, [provName, cwd]);
 
-  // Set default recommended skills when stack changes or catalog loaded
+  // Set default recommended skills when catalog loads or stack changes (if not visited yet)
   useEffect(() => {
-    const recs = catalogSkills.filter((sk) => sk.tech_stack === provTech && sk.is_checked);
-    const gens = catalogSkills.filter((sk) => sk.tech_stack === "general" && sk.is_checked);
-    setSelectedSkillUrls([...recs.map((r) => r.url), ...gens.map((g) => g.url)]);
+    if (catalogSkills.length === 0) return;
+
+    setSkillSelectionsByStack((prev) => {
+      if (prev[provTech] !== undefined) {
+        return prev;
+      }
+      const recs = catalogSkills.filter((sk) => sk.tech_stack === provTech && sk.is_checked);
+      const gens = catalogSkills.filter((sk) => sk.tech_stack === "general" && sk.is_checked);
+      const defaults = [...recs.map((r) => r.url), ...gens.map((g) => g.url)];
+      return { ...prev, [provTech]: defaults };
+    });
   }, [provTech, catalogSkills]);
+
+  const fetchClusters = async () => {
+    try {
+      const res = await fetch("/api/clusters");
+      if (res.ok) {
+        const data = await res.json();
+        setClusters(data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load clusters:", err);
+    }
+  };
+
+  const handleSelectCluster = async (cl: Cluster | null) => {
+    setSelectedProject(null);
+    setSelectedCluster(cl);
+    setShowSystemSettings(false);
+    setShowDocs(false);
+    setShowApiDocs(false);
+    setShowDbViewer(false);
+    if (cl) {
+      addLog(`Mounting project cluster view: [${cl.name.toUpperCase()}]`, "system");
+    }
+  };
+
+  const fetchCheckStatus = async (projectId: string) => {
+    setIsRefreshingCheck(true);
+    addLog(`Running CI verification suite (Tests & Linter) on workspace...`, "system");
+    try {
+      const res = await fetch(`/api/projects/${projectId}/check`);
+      if (res.ok) {
+        const data = await res.json();
+        setCheckStatus(data);
+        addLog(`CI verification checks executed on workspace. Tests: ${data.test_passed ? "PASS" : "FAIL"}, Lint: ${data.lint_passed ? "PASS" : "WARN"}`, data.test_passed && data.lint_passed ? "success" : "error");
+      }
+    } catch (err) {
+      console.error("Failed to fetch check status:", err);
+    } finally {
+      setIsRefreshingCheck(false);
+    }
+  };
 
   const fetchProjects = async (selectFirst = false) => {
     try {
@@ -268,6 +334,8 @@ export const useNeuron = () => {
     setShowDocs(false);
     setShowApiDocs(false);
     setShowDbViewer(false);
+    setSelectedCluster(null);
+    setCheckStatus(null);
     setSelectedProject(proj);
     setActiveTab("plan");
     addLog(`Mounting project environment: [${proj.id.toUpperCase()}] ...`, "system");
@@ -1100,6 +1168,12 @@ export const useNeuron = () => {
     setTerminalCollapsedByDefault,
     tabEditorFontSize,
     setTabEditorFontSize,
+    clusters,
+    selectedCluster,
+    setSelectedCluster,
+    checkStatus,
+    setCheckStatus,
+    isRefreshingCheck,
     selectedDocSlug,
     setSelectedDocSlug,
     isTerminalCollapsed,
@@ -1200,6 +1274,9 @@ export const useNeuron = () => {
     logs,
     addLog,
     fetchProjects,
+    fetchClusters,
+    handleSelectCluster,
+    fetchCheckStatus,
     handleSelectProject,
     handleSavePlan,
     handleImportPlanChecklist,

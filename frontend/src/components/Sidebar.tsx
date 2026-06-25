@@ -10,9 +10,11 @@ import {
   Sun, 
   Moon,
   Github,
-  Database
+  Database,
+  EyeOff,
+  Layers
 } from "lucide-react";
-import { Project } from "../types";
+import { Project, Cluster } from "../types";
 import { TechIcon } from "./TechIcon";
 
 interface SidebarProps {
@@ -33,6 +35,10 @@ interface SidebarProps {
   onShutdownServer: () => void;
   onTriggerSearch: () => void;
   onOpenDbViewer: () => void;
+  clusters: Cluster[];
+  selectedCluster: Cluster | null;
+  onSelectCluster: (cl: Cluster | null) => void;
+  onRefreshClusters: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -53,7 +59,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShutdownServer,
   onTriggerSearch,
   onOpenDbViewer,
+  clusters,
+  selectedCluster,
+  onSelectCluster,
+  onRefreshClusters,
 }) => {
+  const [isAddingCluster, setIsAddingCluster] = React.useState(false);
+  const [newClusterName, setNewClusterName] = React.useState("");
+  const [isSavingCluster, setIsSavingCluster] = React.useState(false);
+
+  const handleCreateClusterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClusterName.trim()) return;
+    setIsSavingCluster(true);
+    try {
+      const res = await fetch("/api/clusters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newClusterName.trim() }),
+      });
+      if (res.ok) {
+        setNewClusterName("");
+        setIsAddingCluster(false);
+        onRefreshClusters();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingCluster(false);
+    }
+  };
+
   const visibleProjects = projects.filter((p) => !hiddenProjectIds.includes(p.id));
 
   return (
@@ -104,6 +140,75 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Systems Directory Section */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* Clusters accordion list */}
+        <div>
+          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-terminal-muted tracking-wider mb-2 font-mono">
+            <span>[ Project Clusters ]</span>
+            <button
+              onClick={() => setIsAddingCluster(!isAddingCluster)}
+              className="p-0.5 rounded border border-terminal-border bg-terminal-black hover:border-terminal-green text-terminal-muted hover:text-terminal-green"
+              title="Create New Project Cluster"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </div>
+
+          {isAddingCluster && (
+            <form onSubmit={handleCreateClusterSubmit} className="mb-2 p-2 bg-terminal-black border border-terminal-border rounded space-y-2">
+              <input
+                type="text"
+                required
+                value={newClusterName}
+                onChange={(e) => setNewClusterName(e.target.value)}
+                placeholder="Cluster Name..."
+                className="w-full bg-terminal-gray border border-terminal-border text-terminal-text rounded px-2 py-1 text-[11px] outline-none font-mono"
+              />
+              <div className="flex justify-end space-x-1">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCluster(false)}
+                  className="px-2 py-0.5 border border-terminal-border rounded text-[9px] font-bold text-terminal-muted uppercase"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingCluster}
+                  className="px-2 py-0.5 bg-terminal-green text-terminal-black rounded text-[9px] font-bold uppercase"
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-1">
+            {clusters.length === 0 ? (
+              <div className="text-[10px] text-terminal-muted italic p-2 border border-dashed border-terminal-border rounded text-center mb-2">
+                No clusters registered.
+              </div>
+            ) : (
+              clusters.map((cl) => {
+                const isSelected = selectedCluster?.id === cl.id;
+                return (
+                  <button
+                    key={cl.id}
+                    onClick={() => onSelectCluster(cl)}
+                    className={`w-full flex items-center space-x-2 p-2 rounded text-xs font-mono transition-all border text-left ${
+                      isSelected
+                        ? "bg-terminal-green/10 border-terminal-green text-terminal-green shadow-[0_0_10px_rgba(0,255,102,0.1)] font-bold"
+                        : "border-transparent text-terminal-muted hover:bg-terminal-gray hover:text-terminal-text"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{cl.name}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+
         <div>
           <div className="flex items-center justify-between text-[10px] uppercase font-bold text-terminal-muted tracking-wider mb-2 font-mono">
             <span>[ Active Systems ]</span>
@@ -142,10 +247,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </button>
                     <button
                       onClick={() => onHideProject(p.id)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-terminal-muted hover:text-red-500 hover:bg-red-500/10 transition-all shrink-0"
-                      title="Hide from dashboard listings"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-terminal-muted hover:text-terminal-green hover:bg-terminal-green/10 transition-all shrink-0"
+                      title="Hide project from sidebar listing"
                     >
-                      <Trash className="w-3 h-3" />
+                      <EyeOff className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 );

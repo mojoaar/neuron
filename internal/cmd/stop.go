@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -37,10 +39,22 @@ var stopCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Locating Neuron background server (PID: %d)...\n", pid)
+
+		// Validate process is actually a Neuron process to avoid race conditions and random killings
+		if !isNeuronProcess(pid) {
+			fmt.Printf("Warning: Process %d is not a valid Neuron background process. Purging stale PID file.\n", pid)
+			if err := os.Remove(pidFile); err != nil && !os.IsNotExist(err) {
+				fmt.Printf("Warning: failed to remove stale PID file: %v\n", err)
+			}
+			return nil
+		}
+
 		process, err := os.FindProcess(pid)
 		if err != nil {
 			fmt.Printf("Warning: process with PID %d not found. Purging stale PID file.\n", pid)
-			_ = os.Remove(pidFile)
+			if err := os.Remove(pidFile); err != nil && !os.IsNotExist(err) {
+				fmt.Printf("Warning: failed to remove stale PID file: %v\n", err)
+			}
 			return nil
 		}
 
@@ -56,10 +70,28 @@ var stopCmd = &cobra.Command{
 			return fmt.Errorf("failed to terminate process: %v", err)
 		}
 
-		_ = os.Remove(pidFile)
+		if err := os.Remove(pidFile); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("Warning: failed to remove PID file on termination: %v\n", err)
+		}
 		fmt.Println("SUCCESS: Neuron background server gracefully terminated.")
 		return nil
 	},
+}
+
+func isNeuronProcess(pid int) bool {
+	if runtime.GOOS == "windows" {
+		// Fallback gracefully on Windows
+		return true
+	}
+
+	// On Unix, query standard command name via ps tool
+	cmd := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "comm=")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	name := strings.ToLower(strings.TrimSpace(string(out)))
+	return strings.Contains(name, "neuron")
 }
 
 func init() {

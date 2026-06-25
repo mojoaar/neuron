@@ -11,6 +11,7 @@ import { DocsReader } from "../components/DocsReader";
 import { ProjectDashboard } from "../components/ProjectDashboard";
 import { Provisioner } from "../components/Provisioner";
 import { DbTableBrowser } from "../components/DbTableBrowser";
+import { ClusterDashboard } from "../components/ClusterDashboard";
 
 export default function Page() {
   const state = useNeuron();
@@ -52,6 +53,10 @@ export default function Page() {
             state.setShowApiDocs(false);
             state.setShowSystemSettings(false);
           }}
+          clusters={state.clusters}
+          selectedCluster={state.selectedCluster}
+          onSelectCluster={state.handleSelectCluster}
+          onRefreshClusters={state.fetchClusters}
         />
 
         {/* Dynamic Inner Panel Viewport */}
@@ -78,7 +83,11 @@ export default function Page() {
               tabEditorFontSize={state.tabEditorFontSize}
             />
           ) : state.showDbViewer ? (
-            <DbTableBrowser />
+            <DbTableBrowser
+              hiddenProjectIds={state.hiddenProjectIds}
+              onUnhideProject={state.handleUnhideProject}
+              onRefreshProjectsList={() => state.fetchProjects(true)}
+            />
           ) : state.showSystemSettings ? (
             <SystemSettings
               cwd={state.cwd}
@@ -115,6 +124,20 @@ export default function Page() {
               onToggleTerminalCollapseDefault={state.handleToggleTerminalCollapseDefault}
               tabEditorFontSize={state.tabEditorFontSize}
               onSetTabEditorFontSize={state.handleSetTabEditorFontSize}
+              projects={state.projects}
+              hiddenProjectIds={state.hiddenProjectIds}
+              onUnhideProject={state.handleUnhideProject}
+            />
+          ) : state.selectedCluster !== null ? (
+            <ClusterDashboard
+              cluster={state.selectedCluster}
+              allProjects={state.projects}
+              onSelectProject={state.handleSelectProject}
+              onRefreshSidebar={() => {
+                state.fetchClusters();
+                state.fetchProjects(false);
+              }}
+              onExitCluster={() => state.handleSelectCluster(null)}
             />
           ) : state.selectedProject === null ? (
             <Provisioner
@@ -135,6 +158,7 @@ export default function Page() {
               onProvision={state.handleProvision}
               onQuickTrackProject={state.handleQuickTrackProject}
               onRefreshDiscovery={state.fetchDiscoveredDirs}
+              darkMode={state.darkMode}
             />
           ) : (
             <ProjectDashboard
@@ -197,6 +221,9 @@ export default function Page() {
               onExportSkills={state.handleExportSkills}
               onSetupMcp={state.handleSetupMcp}
               tabEditorFontSize={state.tabEditorFontSize}
+              checkStatus={state.checkStatus}
+              isRefreshingCheck={state.isRefreshingCheck}
+              onRefreshCheck={state.fetchCheckStatus}
             />
           )}
         </div>

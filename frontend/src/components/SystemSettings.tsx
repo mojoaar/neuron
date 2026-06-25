@@ -6,9 +6,10 @@ import {
   Trash, 
   Plus, 
   FileCode,
-  Cpu
+  Cpu,
+  Eye
 } from "lucide-react";
-import { SystemTemplate, CatalogSkill } from "../types";
+import { SystemTemplate, CatalogSkill, Project } from "../types";
 import { TechIcon } from "./TechIcon";
 
 interface SystemSettingsProps {
@@ -46,6 +47,9 @@ interface SystemSettingsProps {
   onToggleTerminalCollapseDefault: (val: boolean) => void;
   tabEditorFontSize: string;
   onSetTabEditorFontSize: (val: string) => void;
+  projects: Project[];
+  hiddenProjectIds: string[];
+  onUnhideProject: (id: string) => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -83,6 +87,9 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onToggleTerminalCollapseDefault,
   tabEditorFontSize,
   onSetTabEditorFontSize,
+  projects,
+  hiddenProjectIds,
+  onUnhideProject,
 }) => {
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full font-mono">
@@ -162,6 +169,35 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
           </select>
         </div>
       </div>
+
+      {/* Unhide projects container */}
+      {hiddenProjectIds.length > 0 && (
+        <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+            <Eye className="w-4 h-4" />
+            <h2 className="font-bold text-xs uppercase tracking-wider">[ Restore Hidden Workspaces ]</h2>
+          </div>
+          <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+            The following registered systems have been hidden from your active sidebar menu. Click [ Restore ] to reveal them again!
+          </p>
+          <div className="space-y-2">
+            {projects.filter((p) => hiddenProjectIds.includes(p.id)).map((p) => (
+              <div key={p.id} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between space-x-3 text-xs">
+                <div>
+                  <span className="font-bold text-terminal-text">{p.name}</span>
+                  <span className="text-[9px] text-terminal-muted ml-2 font-mono">({p.id})</span>
+                </div>
+                <button
+                  onClick={() => onUnhideProject(p.id)}
+                  className="py-1 px-3 border border-terminal-border hover:border-terminal-green hover:text-terminal-green text-[10px] font-bold uppercase rounded transition-all"
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Templates Panel */}
       <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col">
