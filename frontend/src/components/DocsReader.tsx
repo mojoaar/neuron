@@ -16,11 +16,11 @@ interface DocsReaderProps {
 }
 
 const DOC_CHAPTERS = [
-  { slug: "started", title: "01_GETTING_STARTED", data: DOCS_GETTING_STARTED },
-  { slug: "mcp", title: "02_MCP_SERVER", data: DOCS_MCP_SERVER },
-  { slug: "skills", title: "03_SKILLS_CONSOLE", data: DOCS_SKILLS_GUIDE },
-  { slug: "taskboard", title: "04_TASKBOARD_GUIDE", data: DOCS_TASKBOARD_GUIDE },
-  { slug: "service", title: "05_SYSTEM_SERVICE", data: DOCS_SYSTEM_SERVICE },
+  { slug: "started" as const, title: "01_GETTING_STARTED", data: DOCS_GETTING_STARTED },
+  { slug: "mcp" as const, title: "02_MCP_SERVER", data: DOCS_MCP_SERVER },
+  { slug: "skills" as const, title: "03_SKILLS_CONSOLE", data: DOCS_SKILLS_GUIDE },
+  { slug: "taskboard" as const, title: "04_TASKBOARD_GUIDE", data: DOCS_TASKBOARD_GUIDE },
+  { slug: "service" as const, title: "05_SYSTEM_SERVICE", data: DOCS_SYSTEM_SERVICE },
 ];
 
 export const DocsReader: React.FC<DocsReaderProps> = ({
@@ -43,7 +43,7 @@ export const DocsReader: React.FC<DocsReaderProps> = ({
             return (
               <button
                 key={ch.slug}
-                onClick={() => setSelectedDocSlug(ch.slug as any)}
+                onClick={() => setSelectedDocSlug(ch.slug)}
                 className={`w-full p-2.5 rounded text-left border transition-all text-xs font-mono font-bold ${
                   isSelected
                     ? "bg-terminal-green/5 border-terminal-green text-terminal-green"

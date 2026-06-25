@@ -140,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <TerminalIcon className="w-3 h-3 text-terminal-green" />
             <span>Search HUD...</span>
           </span>
-          <kbd className="bg-terminal-gray border border-terminal-border px-1.5 rounded text-[8px] shrink-0 font-sans">⌘K</kbd>
+          <kbd className="bg-terminal-gray border border-terminal-border px-1.5 rounded text-[8px] shrink-0 font-mono">⌘K</kbd>
         </button>
       </div>
 

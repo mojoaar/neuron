@@ -63,7 +63,7 @@ export interface ApiEndpoint {
 
 export interface DbTableData {
   columns: string[];
-  rows: any[][];
+  rows: (string | number | boolean | null)[][];
 }
 
 export interface Cluster {

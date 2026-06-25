@@ -66,7 +66,7 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({
             <div className="text-terminal-muted italic">[ Console stream empty. Standing by for transaction records... ]</div>
           ) : (
             logs.map((log, idx) => (
-              <div key={idx} className={`flex items-start space-x-2 ${getLogColorClass(log.type)}`}>
+              <div key={log.timestamp + log.text + idx} className={`flex items-start space-x-2 ${getLogColorClass(log.type)}`}>
                 <span className="text-terminal-muted shrink-0 select-none">[{log.timestamp}]</span>
                 <span className="shrink-0 pt-0.5">{getLogIcon(log.type)}</span>
                 <span className="break-all whitespace-pre-wrap leading-relaxed">{log.text}</span>

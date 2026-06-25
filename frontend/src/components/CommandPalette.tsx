@@ -102,7 +102,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               const isSelected = paletteSelectedIndex === idx;
               return (
                 <div
-                  key={idx}
+                  key={opt.label}
                   onClick={() => onSelectOption(idx)}
                   className={`p-2.5 rounded cursor-pointer flex items-center justify-between text-xs transition-all border ${
                     isSelected

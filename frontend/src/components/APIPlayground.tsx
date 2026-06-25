@@ -45,7 +45,7 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
             const isGet = ep.method === "GET";
             return (
               <button
-                key={idx}
+                key={ep.path}
                 onClick={() => setSelectedApiIdx(idx)}
                 className={`w-full p-2.5 rounded text-left border transition-all flex flex-col space-y-1 ${
                   isSelected
