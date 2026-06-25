@@ -145,19 +145,19 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
 
           <div className="space-y-4 flex-1 overflow-y-auto pr-1">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-terminal-muted uppercase">[ Default AGENTS.md rules context ]</label>
+              <label className="text-[10px] font-bold text-terminal-muted uppercase block">[ Default AGENTS.md rules context ]</label>
               <textarea
                 value={tmplAgents}
                 onChange={(e) => setTmplAgents(e.target.value)}
-                className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-2 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed"
+                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-terminal-muted uppercase">[ Default plan.md checklist structure ]</label>
+              <label className="text-[10px] font-bold text-terminal-muted uppercase block">[ Default plan.md checklist structure ]</label>
               <textarea
                 value={tmplPlan}
                 onChange={(e) => setTmplPlan(e.target.value)}
-                className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-2 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed"
+                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
           </div>
