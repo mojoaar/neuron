@@ -2138,7 +2138,7 @@ export default function Home() {
                 )}
 
                 {/* Catalog Skills Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[350px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[650px] overflow-y-auto pr-1">
                   {catalogSkills.map((sk) => (
                     <div key={sk.url} className="p-3 bg-terminal-black border border-terminal-border rounded flex flex-col justify-between space-y-2 relative group">
                       <div className="flex items-start justify-between">
