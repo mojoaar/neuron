@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"neuron/internal/storage"
+	"neuron/internal/tui"
 
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,9 @@ var (
 		Use:   "neuron",
 		Short: "Neuron is an AI-native Lifecycle Manager for software projects",
 		Long:  `A robust CLI and TUI tool that binds conceptual specifications like plan.md to actual code implementations and manages tasks.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return tui.StartApp(store)
+		},
 	}
 )
 
