@@ -137,6 +137,7 @@ func (s *Storage) AddProject(ctx context.Context, p *Project) error {
 	if err != nil {
 		return fmt.Errorf("failed to insert project: %w", err)
 	}
+	s.LogActivity(ctx, "project", p.ID, p.ID, "created", p.Name)
 	return nil
 }
 
@@ -199,6 +200,7 @@ func (s *Storage) AddTask(ctx context.Context, t *Task) error {
 	if err != nil {
 		return fmt.Errorf("failed to insert task: %w", err)
 	}
+	s.LogActivity(ctx, "task", t.ID, t.ProjectID, "created", t.Content)
 	return nil
 }
 
@@ -214,6 +216,7 @@ func (s *Storage) UpdateTask(ctx context.Context, t *Task) error {
 	if err != nil {
 		return fmt.Errorf("failed to update task: %w", err)
 	}
+	s.LogActivity(ctx, "task", t.ID, t.ProjectID, "updated", t.Content)
 	return nil
 }
 
@@ -284,6 +287,7 @@ func (s *Storage) AddSkill(ctx context.Context, sk *Skill) error {
 	if err != nil {
 		return fmt.Errorf("failed to insert skill: %w", err)
 	}
+	s.LogActivity(ctx, "skill", sk.ID, sk.ProjectID, "created", sk.Name)
 	return nil
 }
 
@@ -331,6 +335,7 @@ func (s *Storage) UpdateSkill(ctx context.Context, sk *Skill) error {
 	if err != nil {
 		return fmt.Errorf("failed to update skill: %w", err)
 	}
+	s.LogActivity(ctx, "skill", sk.ID, sk.ProjectID, "updated", sk.Name)
 	return nil
 }
 
@@ -344,6 +349,7 @@ func (s *Storage) DeleteSkill(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete skill: %w", err)
 	}
+	s.LogActivity(ctx, "skill", id, "", "deleted", "")
 	return nil
 }
 
@@ -370,7 +376,11 @@ func (s *Storage) DeleteProject(ctx context.Context, id string) error {
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	s.LogActivity(ctx, "project", id, id, "deleted", "")
+	return nil
 }
 
 func (s *Storage) prepopulateSystemTables() error {
@@ -915,6 +925,7 @@ func (s *Storage) AddCluster(ctx context.Context, c *Cluster) error {
 	if err != nil {
 		return fmt.Errorf("failed to insert cluster: %w", err)
 	}
+	s.LogActivity(ctx, "cluster", c.ID, "", "created", c.Name)
 	return nil
 }
 
@@ -955,7 +966,11 @@ func (s *Storage) DeleteCluster(ctx context.Context, id string) error {
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	s.LogActivity(ctx, "cluster", id, "", "deleted", "")
+	return nil
 }
 
 // AddProjectToCluster binds a project to a cluster.
@@ -1025,4 +1040,48 @@ func (s *Storage) TruncateAllTables(ctx context.Context) error {
 	}
 
 	return s.prepopulateSystemTables()
+}
+
+// ActivityLogEntry represents a single record in the activity_log table.
+type ActivityLogEntry struct {
+	ID         int       `json:"id"`
+	EntityType string    `json:"entity_type"`
+	EntityID   string    `json:"entity_id"`
+	ProjectID  string    `json:"project_id,omitempty"`
+	Action     string    `json:"action"`
+	Label      string    `json:"label,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// LogActivity inserts a new entry into the activity_log table.
+func (s *Storage) LogActivity(ctx context.Context, entityType, entityID, projectID, action, label string) {
+	_, _ = s.db.ExecContext(ctx, `
+		INSERT INTO activity_log (entity_type, entity_id, project_id, action, label, created_at)
+		VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+	`, entityType, entityID, projectID, action, label)
+}
+
+// ListActivity retrieves recent activity log entries, limited to a given maximum count.
+func (s *Storage) ListActivity(ctx context.Context, limit int) ([]*ActivityLogEntry, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT id, entity_type, entity_id, project_id, action, label, created_at FROM activity_log ORDER BY id DESC LIMIT ?;", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*ActivityLogEntry
+	for rows.Next() {
+		e := &ActivityLogEntry{}
+		var projID, lbl *string
+		if err := rows.Scan(&e.ID, &e.EntityType, &e.EntityID, &projID, &e.Action, &lbl, &e.CreatedAt); err == nil {
+			if projID != nil {
+				e.ProjectID = *projID
+			}
+			if lbl != nil {
+				e.Label = *lbl
+			}
+			list = append(list, e)
+		}
+	}
+	return list, nil
 }

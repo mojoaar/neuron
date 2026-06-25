@@ -73,6 +73,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/db/tables", s.handleDbTables)
 	mux.HandleFunc("/api/system/db/table", s.handleDbTable)
 	mux.HandleFunc("/api/system/db/truncate", s.handleDbTruncate)
+	mux.HandleFunc("/api/system/activity", s.handleActivity)
+	mux.HandleFunc("/api/system/api-key", s.handleApiKey)
 	mux.HandleFunc("/api/clusters", s.handleClusters)
 	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
 
@@ -699,11 +701,12 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			respondJSON(w, http.StatusOK, map[string]string{"content": string(content)})
 
 		case http.MethodPost:
+			r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 			var req struct {
 				Content string `json:"content"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				respondError(w, http.StatusBadRequest, "Invalid payload")
+				respondError(w, http.StatusBadRequest, "Invalid payload or payload too large")
 				return
 			}
 			planPath := filepath.Join(proj.Path, "plan.md")
@@ -738,11 +741,12 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			respondJSON(w, http.StatusOK, map[string]string{"content": string(content)})
 
 		case http.MethodPost:
+			r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 			var req struct {
 				Content string `json:"content"`
 			}
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				respondError(w, http.StatusBadRequest, "Invalid payload")
+				respondError(w, http.StatusBadRequest, "Invalid payload or payload too large")
 				return
 			}
 			rulesPath := filepath.Join(proj.Path, "AGENTS.md")
@@ -1063,6 +1067,11 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to encode updated configuration: "+err.Error())
 		return
+	}
+
+	// Backup existing config before overwriting
+	if origData, err := os.ReadFile(configPath); err == nil {
+		_ = os.WriteFile(configPath+".bak", origData, 0644)
 	}
 
 	if err := os.WriteFile(configPath, updatedJSON, 0644); err != nil {
@@ -1456,6 +1465,59 @@ func (s *Server) handleDbTruncate(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"message": "All DuckDB tables purged and catalog entries re-seeded successfully.",
 	})
+}
+
+// handleActivity returns recent activity log entries.
+func (s *Server) handleActivity(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+	entries, err := s.store.ListActivity(r.Context(), 200)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, entries)
+}
+
+// handleApiKey returns or regenerates the API authentication key.
+func (s *Server) handleApiKey(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	switch r.Method {
+	case http.MethodGet:
+		key, err := s.store.GetSetting(ctx, "api_key")
+		if err != nil {
+			// Auto-generate one if missing
+			b := make([]byte, 32)
+			if _, err := rand.Read(b); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to generate API key")
+				return
+			}
+			key = hex.EncodeToString(b)
+			if err := s.store.SaveSetting(ctx, "api_key", key); err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
+		respondJSON(w, http.StatusOK, map[string]string{"api_key": key})
+
+	case http.MethodPost:
+		b := make([]byte, 32)
+		if _, err := rand.Read(b); err != nil {
+			respondError(w, http.StatusInternalServerError, "Failed to generate API key")
+			return
+		}
+		key := hex.EncodeToString(b)
+		if err := s.store.SaveSetting(ctx, "api_key", key); err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondJSON(w, http.StatusOK, map[string]string{"api_key": key})
+
+	default:
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
 }
 
 func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request) {

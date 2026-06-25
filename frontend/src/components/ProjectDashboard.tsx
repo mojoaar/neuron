@@ -13,15 +13,15 @@ import {
   Database,
   ExternalLink
 } from "lucide-react";
-import { Project, Task, Skill, GitStatus, CatalogSkill, CheckStatus } from "../types";
+import { Project, Task, Skill, GitStatus, CatalogSkill, CheckStatus, ActivityEntry } from "../types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface ProjectDashboardProps {
   selectedProject: Project;
   tasks: Task[];
   skills: Skill[];
-  activeTab: "plan" | "rules" | "tasks" | "skills" | "mcp";
-  setActiveTab: (tab: "plan" | "rules" | "tasks" | "skills" | "mcp") => void;
+  activeTab: "plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline";
+  setActiveTab: (tab: "plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline") => void;
   planContent: string;
   setPlanContent: (val: string) => void;
   isSavingPlan: boolean;
@@ -80,6 +80,7 @@ interface ProjectDashboardProps {
   isRefreshingCheck: boolean;
   onRefreshCheck: (id: string) => void;
   enableVerificationCi: boolean;
+  activityEntries: ActivityEntry[];
 }
 
 export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
@@ -146,6 +147,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   isRefreshingCheck,
   onRefreshCheck,
   enableVerificationCi,
+  activityEntries,
 }) => {
   const getTaskPriorityBorder = (prio: string) => {
     switch (prio) {
@@ -260,7 +262,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
       {/* Tabs list */}
       <div className="flex border-b border-terminal-border bg-terminal-dark/50 shrink-0">
-        {(["plan", "rules", "tasks", "skills", "mcp"] as const).map((tab) => {
+        {(["plan", "rules", "tasks", "skills", "mcp", "timeline"] as const).map((tab) => {
           const isActive = activeTab === tab;
           return (
             <button
@@ -272,7 +274,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   : "text-terminal-muted hover:text-terminal-text hover:bg-terminal-black/30"
               }`}
             >
-              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "tasks" ? "03_TASKBOARD" : tab === "skills" ? "04_SKILLS_CONSOLE" : "05_MCP_SERVER"}
+              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "tasks" ? "03_TASKBOARD" : tab === "skills" ? "04_SKILLS_CONSOLE" : tab === "mcp" ? "05_MCP_SERVER" : "06_TIMELINE"}
             </button>
           );
         })}
@@ -681,6 +683,38 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   <span>Configure Claude</span>
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "timeline" && (
+          <div className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-y-auto w-full">
+            <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4 shrink-0">
+              <RefreshCw className="w-4 h-4 animate-pulse" />
+              <h2 className="font-bold text-xs uppercase tracking-wider">[ 06_ACTIVITY_LOG & TIMELINE ]</h2>
+            </div>
+            <div className="space-y-2">
+              {activityEntries.length === 0 ? (
+                <div className="text-center py-12 text-terminal-muted italic text-xs">
+                  No activity recorded yet. Start provisioning and managing your projects to see events here!
+                </div>
+              ) : (
+                activityEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-start space-x-2.5 p-2.5 bg-terminal-black border border-terminal-border rounded text-xs">
+                    <div className="text-[9px] text-terminal-muted font-mono shrink-0 w-16 text-right">
+                      {new Date(entry.created_at).toLocaleTimeString(undefined, { hour12: false })}
+                    </div>
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      {entry.action === "created" && <Plus className="w-3.5 h-3.5 text-terminal-green" />}
+                      {entry.action === "updated" && <RefreshCw className="w-3.5 h-3.5 text-yellow-500" />}
+                      {entry.action === "deleted" && <Trash className="w-3.5 h-3.5 text-red-500" />}
+                    </div>
+                    <span className="font-bold text-terminal-text">{entry.entity_type}</span>
+                    <span className="text-terminal-muted">{entry.action}</span>
+                    {entry.label && <span className="text-terminal-text truncate max-w-[200px]">"{entry.label}"</span>}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

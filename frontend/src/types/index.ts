@@ -81,6 +81,16 @@ export interface CheckStatus {
   checked_at: string;
 }
 
+export interface ActivityEntry {
+  id: number;
+  entity_type: string;
+  entity_id: string;
+  project_id?: string;
+  action: string;
+  label?: string;
+  created_at: string;
+}
+
 export type ThemeName = "neuron" | "dracula" | "nord" | "cyberpunk" | "github";
 export type ThemeMode = "dark" | "light";
 export type FontFamily = "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "cascadia-code" | "roboto-mono" | "inconsolata" | "space-mono" | "ubuntu-mono" | "cousine";

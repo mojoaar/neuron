@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus, ThemeName, ThemeMode, FontFamily, FONTS } from "../types";
+import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus, ThemeName, ThemeMode, FontFamily, FONTS, ActivityEntry } from "../types";
 import { API_ENDPOINTS } from "../lib/endpoints";
 
 export const useNeuron = () => {
@@ -7,7 +7,7 @@ export const useNeuron = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [activeTab, setActiveTab] = useState<"plan" | "rules" | "tasks" | "skills" | "mcp">("plan");
+  const [activeTab, setActiveTab] = useState<"plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline">("plan");
 
   // Path aware state
   const [cwd, setCwd] = useState("");
@@ -68,6 +68,8 @@ export const useNeuron = () => {
   // Recommended skills Catalog state
   const [catalogSkills, setCatalogSkills] = useState<CatalogSkill[]>([]);
   const [customStackLabels, setCustomStackLabels] = useState<Record<string, string>>({});
+  const [apiKey, setApiKey] = useState("");
+  const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
   const [isAddingCatalogSkill, setIsAddingCatalogSkill] = useState(false);
   const [newCatUrl, setNewCatUrl] = useState("");
   const [newCatLabel, setNewCatLabel] = useState("");
@@ -259,6 +261,8 @@ export const useNeuron = () => {
     fetchCiSettings();
     fetchThemeSettings();
     fetchCustomStackLabels();
+    fetchApiKey();
+    fetchActivityLog();
     fetchClusters();
     fetchDiscoveredDirs();
     fetchProjects(true);
@@ -680,6 +684,37 @@ export const useNeuron = () => {
           is_checked: isChecked,
         }),
       });
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchApiKey = async () => {
+    try {
+      const res = await fetch("/api/system/api-key");
+      if (res.ok) {
+        const data = await res.json();
+        setApiKey(data.api_key || "");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRegenerateApiKey = async () => {
+    try {
+      const res = await fetch("/api/system/api-key", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setApiKey(data.api_key || "");
+        addLog("SUCCESS: API authentication key regenerated.", "success");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchActivityLog = async () => {
+    try {
+      const res = await fetch("/api/system/activity");
+      if (res.ok) {
+        const data = await res.json();
+        setActivityEntries(data || []);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -1381,6 +1416,9 @@ export const useNeuron = () => {
     setThemeMode,
     fontFamily,
     setFontFamily,
+    apiKey,
+    setApiKey,
+    activityEntries,
     showDocs,
     setShowDocs,
     showApiDocs,
@@ -1524,6 +1562,7 @@ export const useNeuron = () => {
     setCustomStackLabels,
     handleSetTechStackLabel,
     handleToggleCatalogSkillChecked,
+    handleRegenerateApiKey,
     handleTruncateDatabase,
     handleSetTabEditorFontSize,
     handleAddCatalogSkill,

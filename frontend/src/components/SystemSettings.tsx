@@ -70,6 +70,8 @@ interface SystemSettingsProps {
   onSetTechStackLabel: (stack: string, label: string) => void;
   onToggleCatalogSkillChecked: (url: string, isChecked: boolean) => void;
   onTruncateDatabase: () => void;
+  apiKey: string;
+  onRegenerateApiKey: () => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -124,6 +126,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onSetTechStackLabel,
   onToggleCatalogSkillChecked,
   onTruncateDatabase,
+  apiKey,
+  onRegenerateApiKey,
 }) => {
   const [confirmTruncate, setConfirmTruncate] = React.useState(false);
   return (
@@ -332,6 +336,35 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             </select>
           </div>
         </div>
+      </div>
+
+      {/* API Key Settings Card */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+          <Database className="w-4 h-4" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ API Authentication Key ]</h2>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 min-w-0 flex-1">
+            <input
+              type="password"
+              value={apiKey}
+              readOnly
+              className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-3 py-1.5 text-[11px] font-mono outline-none flex-1 min-w-0 cursor-text select-all"
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
+          <button
+            onClick={onRegenerateApiKey}
+            className="py-1.5 px-4 rounded bg-terminal-green text-terminal-black font-bold text-xs uppercase flex items-center space-x-1.5 transition-all shadow-[0_0_10px_rgba(0,255,102,0.1)] shrink-0 ml-3"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Regenerate</span>
+          </button>
+        </div>
+        <p className="text-[10px] text-terminal-muted leading-relaxed mt-3">
+          This API key is used to authenticate external tools connecting to the Neuron HTTP daemon. It is auto-generated on first launch. Click to select the key, copy it, and store it securely.
+        </p>
       </div>
 
       {/* Templates Panel */}

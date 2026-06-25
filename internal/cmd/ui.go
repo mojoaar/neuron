@@ -27,6 +27,11 @@ var (
 			pidFile := filepath.Join(configDir, "neuron", "neuron.pid")
 
 			if daemonMode {
+				execPath, err := os.Executable()
+				if err != nil {
+					return fmt.Errorf("failed to resolve neuron executable path: %v", err)
+				}
+
 				// Spawn detached child process of ourselves without the daemon flag
 				var filteredArgs []string
 				for _, arg := range os.Args[1:] {
@@ -35,7 +40,7 @@ var (
 					}
 				}
 
-				child := exec.Command(os.Args[0], filteredArgs...)
+				child := exec.Command(execPath, filteredArgs...)
 				child.Stdout = nil
 				child.Stderr = nil
 				child.Stdin = nil

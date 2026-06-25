@@ -1,4 +1,4 @@
-.PHONY: all frontend build release clean
+.PHONY: all frontend build test release clean
 
 BINARY_NAME=neuron
 OUT_DIR=dist
@@ -15,6 +15,11 @@ build: frontend
 	@echo "==> Building Local Go Binary..."
 	go build -o $(BINARY_NAME) cmd/neuron/main.go
 	@echo "==> Done! Run ./$(BINARY_NAME) to launch Neuron HUD."
+
+test:
+	@echo "==> Running Go Tests..."
+	go test ./internal/storage/... -v -count=1
+	@echo "==> All tests completed!"
 
 release: frontend
 	@echo "==> Cross-compiling for macOS, Linux, and Windows..."

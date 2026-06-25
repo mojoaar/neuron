@@ -148,6 +148,8 @@ export default function Page() {
                 state.setShowDbViewer(false);
                 state.setShowSystemSettings(false);
               }}
+              apiKey={state.apiKey}
+              onRegenerateApiKey={state.handleRegenerateApiKey}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard
@@ -246,6 +248,7 @@ export default function Page() {
               isRefreshingCheck={state.isRefreshingCheck}
               onRefreshCheck={state.fetchCheckStatus}
               enableVerificationCi={state.enableVerificationCi}
+              activityEntries={state.activityEntries}
             />
           )}
         </div>

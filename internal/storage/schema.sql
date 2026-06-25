@@ -67,3 +67,13 @@ CREATE TABLE IF NOT EXISTS cluster_projects (
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (cluster_id, project_id)
 );
+
+CREATE TABLE IF NOT EXISTS activity_log (
+    id INTEGER PRIMARY KEY,
+    entity_type VARCHAR NOT NULL,
+    entity_id VARCHAR NOT NULL,
+    project_id VARCHAR,
+    action VARCHAR NOT NULL,
+    label VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
