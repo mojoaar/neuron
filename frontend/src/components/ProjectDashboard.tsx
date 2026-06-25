@@ -649,7 +649,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                 <div className="space-y-2.5 mb-4">
                   <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ OpenCode TUI Client ]</div>
                   <p className="text-[11px] text-terminal-muted leading-relaxed font-mono">
-                    Registers the MCP server directly inside OpenCode TUI user config parameters profile located at <code className="text-terminal-text">~/.opencode/config.json</code>.
+                    Registers the MCP server directly inside OpenCode TUI user config parameters profile located at <code className="text-terminal-text">~/.config/opencode/opencode.json</code>.
                   </p>
                 </div>
                 <button
