@@ -12,9 +12,9 @@ Neuron is an **AI-native Software Project Lifecycle Manager** that bridges high-
 
 Unlike legacy project orchestrators that pollute your workspaces with complex, proprietary folders (like `.neuron/` or `neuron.yaml` files), Neuron operates under a strict **Zero-Footprint Workspace Contract**:
 
-1. **Prisinte Directories**: Scaffolds are completely clean, standard, and native (e.g., standard `go.mod` for Go, `package.json` for Node.js).
-2. **Dual-TUI Guidelines (`AGENTS.md` & `CLAUDE.md`)**: Neuron creates a stack-specific code-boundary guidelines file (`AGENTS.md`) and a relative symbolic link (`CLAUDE.md`) at your project root. Any entering AI agent (such as Claude Code, OpenCode TUI, Cursor, or Copilot) automatically reads these boundaries to ensure high-signal standards compliance.
-3. **Cross-TUI Skills Integration**: Virtual catalog skills are compiled, unzipped, and linked under local project folders (`.agents/skills/` symlinked cleanly to `.claude/skills/`), making automated capabilities universally discoverable by both **OpenCode TUI** and **Claude TUI**!
+1. **Pristine Directories**: Scaffolds are completely clean, standard, and native (e.g., standard `go.mod` for Go, `package.json` for Node.js).
+2. **Agent-Ready Guidelines (`AGENTS.md` & `CLAUDE.md`)**: Neuron creates a stack-specific code-boundary guidelines file (`AGENTS.md`) and a relative symbolic link (`CLAUDE.md`) at your project root. Any entering AI agent (such as Claude Code, OpenCode TUI, Cursor, or Copilot) automatically reads these boundaries to ensure high-signal standards compliance.
+3. **Cross-Platform Skills Integration**: Virtual catalog skills are downloaded and linked under local project folders (`.agents/skills/` symlinked to `.claude/skills/`), making automated capabilities universally discoverable!
 
 ---
 
@@ -33,7 +33,7 @@ Neuron maintains an in-process, high-performance transactional **DuckDB database
 Your project workspace folder stays completely clean and contains only standard, transparent assets:
 * **`AGENTS.md` (and `CLAUDE.md` symlink)**: Human-readable guidelines defining system boundaries.
 * **`plan.md`**: High-level markdown specifications checklist.
-* **`.agents/skills/` (and `.claude/skills/` symlink)**: Unpacked custom shell automations.
+* **`.agents/skills/` (and `.claude/skills/` symlink)**: Downloaded custom automation packages.
 * **Project manifests (`Makefile` or `package.json`)**: Configured and updated natively during skills exports.
 
 ---
@@ -56,7 +56,7 @@ To run `neuron` dynamically from any terminal folder:
 * **macOS/Linux**:
   Open your shell profile (usually `~/.zshrc` or `~/.bashrc`) and append the export line:
   ```bash
-  export PATH="/Users/mojoaar/Development/neuron:$PATH"
+  export PATH="/path/to/neuron:$PATH"
   ```
   Reload config: `source ~/.zshrc` (or `source ~/.bashrc`).
 
@@ -124,10 +124,17 @@ Start-ScheduledTask -TaskName "NeuronServer"
 
 ## 🎨 Next.js Web HUD Features
 
-* **Universal Command Palette (`⌘K` / `Ctrl+K`)**: Instant fuzzy search across projects, viewports, settings, and command executions with keyboard traversal.
-* **Interactive REST Playground (`/apidocs`)**: Interactive rest catalog with query parameters and body payloads allowing you to run live backend requests with latency CRT readouts.
-* **Collapsible Terminal CRT Logger**: Real-time operating log console featuring 24-hour timestamp blocks, collapsible layouts, and active clear options.
-* **Light/Dark Mode Toggler**: Instant style-skin variable toggler in the header row supporting custom terminal-dark and high-contrast terminal-light modes.
+*   **5 Visual Themes**: Switch between Neuron (green terminal), Dracula (purple), Nord (arctic), Cyberpunk 2077 (neon), and GitHub Developer — each with dark and light modes.
+*   **10 Monospace Fonts**: Configure JetBrains Mono, Fira Code, Source Code Pro, IBM Plex Mono, Cascadia Code, and more — all weights supported.
+*   **Universal Command Palette (`⌘K` / `Ctrl+K`)**: Fuzzy search across projects, viewports, settings, and commands with keyboard traversal and auto-scroll.
+*   **Interactive REST Playground**: Real-time API catalog with query parameters and body payloads — execute live backend requests with latency CRT readouts.
+*   **Project Clusters**: Group related workspace environments into clusters with bulk overview dashboards.
+*   **DuckDB Table Viewer**: Live relational database browser with per-row delete and unhide actions.
+*   **Interactive CI Dashboard**: Per-project test and lint status badges with collapsible stdout/stderr output trays.
+*   **Activity Audit Timeline**: Scrollable event feed tracking project creation, task transitions, and skill installations.
+*   **Collapsible Terminal CRT Logger**: Real-time operating log console with 24-hour timestamp blocks and clear options.
+*   **Configurable Editor & Preview Font Sizes**: Adjust plan, rules, and markdown preview font sizes from 11px to 17px.
+*   **Light/Dark Mode Toggler**: Instant style-skin variable toggler supporting custom terminal-dark and high-contrast terminal-light modes.
 
 ---
 
