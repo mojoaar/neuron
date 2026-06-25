@@ -1257,6 +1257,44 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
+func detectTechStack(dirPath string) string {
+	if _, err := os.Stat(filepath.Join(dirPath, "go.mod")); err == nil {
+		return "go"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "next.config.js")); err == nil {
+		return "nextjs"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "next.config.mjs")); err == nil {
+		return "nextjs"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "package.json")); err == nil {
+		return "node"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "requirements.txt")); err == nil {
+		return "python"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "pyproject.toml")); err == nil {
+		return "python"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "build.gradle")); err == nil {
+		return "android"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "build.gradle.kts")); err == nil {
+		return "android"
+	}
+	if _, err := os.Stat(filepath.Join(dirPath, "index.html")); err == nil {
+		return "html"
+	}
+	if files, err := os.ReadDir(dirPath); err == nil {
+		for _, file := range files {
+			if !file.IsDir() && strings.HasSuffix(file.Name(), ".ps1") {
+				return "powershell"
+			}
+		}
+	}
+	return "go"
+}
+
 func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
@@ -1282,8 +1320,9 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type DiscoveredFolder struct {
-		Name string `json:"name"`
-		Path string `json:"path"`
+		Name      string `json:"name"`
+		Path      string `json:"path"`
+		TechStack string `json:"tech_stack"`
 	}
 
 	var discovered []DiscoveredFolder
@@ -1301,9 +1340,11 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		cleanedPath := filepath.Clean(absPath)
 
 		if !registeredPaths[cleanedPath] {
+			detected := detectTechStack(absPath)
 			discovered = append(discovered, DiscoveredFolder{
-				Name: name,
-				Path: absPath,
+				Name:      name,
+				Path:      absPath,
+				TechStack: detected,
 			})
 		}
 	}

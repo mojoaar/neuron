@@ -407,7 +407,7 @@ export default function Home() {
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [isServerDisconnected, setIsServerDisconnected] = useState(false);
   const [hiddenProjectIds, setHiddenProjectIds] = useState<string[]>([]);
-  const [discoveredDirs, setDiscoveredDirs] = useState<{name: string, path: string}[]>([]);
+  const [discoveredDirs, setDiscoveredDirs] = useState<{name: string, path: string, tech_stack?: string}[]>([]);
   const [discoveredStacks, setDiscoveredStacks] = useState<Record<string, string>>({});
   const [isDiscovering, setIsDiscovering] = useState(false);
 
@@ -858,8 +858,8 @@ export default function Home() {
         const data = await res.json();
         setDiscoveredDirs(data || []);
         const defaults: Record<string, string> = {};
-        (data || []).forEach((dir: { name: string; path: string }) => {
-          defaults[dir.name] = "go";
+        (data || []).forEach((dir: { name: string; path: string; tech_stack?: string }) => {
+          defaults[dir.name] = dir.tech_stack || "go";
         });
         setDiscoveredStacks(defaults);
       }
