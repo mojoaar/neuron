@@ -19,7 +19,11 @@ export default function Page() {
   return (
     <div className={`h-screen flex flex-col bg-terminal-dark text-terminal-text overflow-hidden font-mono selection:bg-terminal-green/30 selection:text-terminal-green`}>
       {/* Visual background scanning grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,102,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,102,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[size:32px_32px] pointer-events-none z-0"
+        style={{
+          backgroundImage: "linear-gradient(var(--terminal-grid) 1px, transparent 1px), linear-gradient(90deg, var(--terminal-grid) 1px, transparent 1px)"
+        }}
+      />
 
       {/* Main Container */}
       <div className="flex-1 flex overflow-hidden relative z-10">

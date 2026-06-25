@@ -28,8 +28,8 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({
   const getLogColorClass = (type: string) => {
     switch (type) {
       case "success": return "text-terminal-green";
-      case "error": return "text-red-500";
-      case "system": return "text-[#00ffff]"; // Cyan HUD log line
+      case "error": return "text-terminal-red";
+      case "system": return "text-terminal-cyan"; // Cyan HUD log line
       default: return "text-terminal-text";
     }
   };
@@ -37,8 +37,8 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({
   const getLogIcon = (type: string) => {
     switch (type) {
       case "success": return <CheckCircle className="w-3 h-3 text-terminal-green" />;
-      case "error": return <AlertTriangle className="w-3 h-3 text-red-500" />;
-      case "system": return <TerminalIcon className="w-3 h-3 text-[#00ffff]" />;
+      case "error": return <AlertTriangle className="w-3 h-3 text-terminal-red" />;
+      case "system": return <TerminalIcon className="w-3 h-3 text-terminal-cyan" />;
       default: return <Info className="w-3 h-3 text-terminal-muted" />;
     }
   };
@@ -80,10 +80,10 @@ export const ConsoleLogs: React.FC<ConsoleLogsProps> = ({
       {/* Connection severed critical overlay */}
       {isServerDisconnected && (
         <div className="fixed inset-0 bg-terminal-dark/95 z-50 flex flex-col items-center justify-center p-6 text-center font-mono">
-          <div className="border border-red-500/35 bg-terminal-black max-w-md w-full p-8 rounded-lg shadow-[0_0_50px_rgba(239,68,68,0.15)] relative">
+          <div className="border border-terminal-red/35 bg-terminal-black max-w-md w-full p-8 rounded-lg shadow-[0_0_50px_rgba(239,68,68,0.15)] relative">
             <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none rounded-lg" />
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4 animate-bounce" />
-            <h2 className="text-sm font-bold uppercase text-red-500 tracking-wider mb-2">[ CRITICAL: HUD_DAEMON_OFFLINE ]</h2>
+            <AlertTriangle className="w-12 h-12 text-terminal-red mx-auto mb-4 animate-bounce" />
+            <h2 className="text-sm font-bold uppercase text-terminal-red tracking-wider mb-2">[ CRITICAL: HUD_DAEMON_OFFLINE ]</h2>
             <p className="text-xs text-terminal-muted leading-relaxed mb-6">
               The HTTP daemon process has terminated or the network connection has been severed. Launch the local daemon process inside your shell terminal to reconnect.
             </p>

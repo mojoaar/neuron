@@ -126,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
               title="Toggle Dark/Light Mode"
             >
-              {darkMode ? <Sun className="w-3.5 h-3.5 text-yellow-500 animate-pulse" /> : <Moon className="w-3.5 h-3.5 text-cyan-400" />}
+              {darkMode ? <Sun className="w-3.5 h-3.5 text-terminal-yellow animate-pulse" /> : <Moon className="w-3.5 h-3.5 text-terminal-cyan" />}
             </button>
           </div>
         </div>
@@ -344,7 +344,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={onShutdownServer}
-          className="w-full py-1.5 px-3 rounded border border-red-950 hover:border-red-500 bg-red-950/20 hover:bg-red-500/10 text-red-500 font-mono text-[10px] font-bold uppercase transition-all flex items-center justify-center space-x-1"
+          className="w-full py-1.5 px-3 rounded border border-terminal-red hover:border-terminal-red bg-terminal-red/20 hover:bg-terminal-red/10 text-terminal-red font-mono text-[10px] font-bold uppercase transition-all flex items-center justify-center space-x-1"
         >
           <AlertTriangle className="w-3 h-3 animate-pulse" />
           <span>Shutdown Daemon</span>

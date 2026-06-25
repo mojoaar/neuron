@@ -161,7 +161,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             <button
               onClick={onResetScopePath}
               disabled={isSavingScope}
-              className="py-1.5 px-4 rounded border border-terminal-border hover:border-red-500 hover:text-red-500 bg-terminal-black text-terminal-muted font-bold text-xs uppercase shrink-0 transition-all"
+              className="py-1.5 px-4 rounded border border-terminal-border hover:border-terminal-red hover:text-terminal-red bg-terminal-black text-terminal-muted font-bold text-xs uppercase shrink-0 transition-all"
             >
               Reset
             </button>
@@ -446,7 +446,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
                     </label>
                     <button
                       onClick={() => onDeleteCatalogSkill(sk.url, sk.label)}
-                      className="p-0.5 rounded text-terminal-muted hover:text-red-500 shrink-0"
+                      className="p-0.5 rounded text-terminal-muted hover:text-terminal-red shrink-0"
                     >
                       <Trash className="w-3 h-3" />
                     </button>
@@ -572,7 +572,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
                   </div>
                   <button
                     onClick={() => onDeleteCatalogSkill(sk.url, sk.label)}
-                    className="p-1 rounded border border-terminal-border text-terminal-muted hover:text-red-500 hover:bg-red-500/10 transition-all shrink-0"
+                    className="p-1 rounded border border-terminal-border text-terminal-muted hover:text-terminal-red hover:bg-terminal-red/10 transition-all shrink-0"
                     title="Remove from Catalog"
                   >
                     <Trash className="w-3.5 h-3.5" />
@@ -584,8 +584,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
         </div>
 
       {/* Danger Zone: Truncate All Database Tables */}
-      <div className="border border-red-950/60 bg-red-950/5 rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center space-x-2 text-red-500 border-b border-red-950/30 pb-2.5 mb-4">
+      <div className="border border-terminal-red/30 bg-terminal-red/5 rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-red border-b border-terminal-red/20 pb-2.5 mb-4">
           <AlertTriangle className="w-4 h-4 animate-pulse" />
           <h2 className="font-bold text-xs uppercase tracking-wider">[ Danger Zone: Truncate Full Database ]</h2>
         </div>
@@ -593,8 +593,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
         {confirmTruncate ? (
           <div className="space-y-3">
             <p className="text-[11px] text-terminal-muted leading-relaxed">
-              This action will permanently delete <strong className="text-red-500">ALL data</strong> from every table in the DuckDB catalog:
-              <code className="text-[10px] block mt-1 text-red-400 font-mono bg-terminal-black border border-red-950/40 rounded p-2 leading-relaxed">
+              This action will permanently delete <strong className="text-terminal-red">ALL data</strong> from every table in the DuckDB catalog:
+              <code className="text-[10px] block mt-1 text-terminal-red font-mono bg-terminal-black border border-terminal-red/30 rounded p-2 leading-relaxed">
                 projects · tasks · skills · clusters · cluster_projects · templates · skill_catalog · system_settings
               </code>
               System defaults and recommended skills catalog will be automatically re-seeded. <strong className="text-terminal-text">This cannot be undone.</strong>
@@ -602,7 +602,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             <div className="flex items-center space-x-3">
               <button
                 onClick={onTruncateDatabase}
-                className="py-1.5 px-4 rounded bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase flex items-center space-x-1.5 transition-all"
+                className="py-1.5 px-4 rounded bg-terminal-red hover:bg-terminal-red text-white font-bold text-xs uppercase flex items-center space-x-1.5 transition-all"
               >
                 <Trash className="w-3.5 h-3.5" />
                 <span>CONFIRM: Truncate Everything</span>
@@ -622,7 +622,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             </p>
             <button
               onClick={() => setConfirmTruncate(true)}
-              className="py-1.5 px-4 rounded border border-red-950 hover:border-red-500 bg-red-950/20 hover:bg-red-500/10 text-red-500 font-bold text-xs uppercase whitespace-nowrap transition-all flex items-center space-x-1.5"
+              className="py-1.5 px-4 rounded border border-terminal-red hover:border-terminal-red bg-terminal-red/20 hover:bg-terminal-red/10 text-terminal-red font-bold text-xs uppercase whitespace-nowrap transition-all flex items-center space-x-1.5"
             >
               <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
               <span>Truncate Database</span>

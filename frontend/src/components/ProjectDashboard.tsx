@@ -151,9 +151,9 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 }) => {
   const getTaskPriorityBorder = (prio: string) => {
     switch (prio) {
-      case "high": return "border-red-500/40 bg-red-500/5 text-red-400";
+      case "high": return "border-terminal-red/40 bg-terminal-red/5 text-terminal-red";
       case "low": return "border-blue-500/40 bg-blue-500/5 text-blue-400";
-      default: return "border-yellow-500/40 bg-yellow-500/5 text-yellow-400";
+      default: return "border-terminal-yellow/40 bg-terminal-yellow/5 text-yellow-400";
     }
   };
 
@@ -174,7 +174,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <GitBranch className="w-3.5 h-3.5 text-terminal-green" />
               <span className="text-terminal-text">{gitStatus.branch}</span>
             </div>
-            <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase ${gitStatus.is_dirty ? "border border-red-500/30 text-red-500 bg-red-500/5" : "border border-terminal-green/30 text-terminal-green bg-terminal-green/5"}`}>
+            <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase ${gitStatus.is_dirty ? "border border-terminal-red/30 text-terminal-red bg-terminal-red/5" : "border border-terminal-green/30 text-terminal-green bg-terminal-green/5"}`}>
               {gitStatus.is_dirty ? `Dirty (+${gitStatus.dirty_count})` : "Clean"}
             </span>
             <button
@@ -205,7 +205,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   checkStatus 
                     ? checkStatus.test_passed 
                       ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
-                      : "border-red-500/30 text-red-500 bg-red-500/5 hover:border-red-500/60"
+                      : "border-terminal-red/30 text-terminal-red bg-terminal-red/5 hover:border-terminal-red/60"
                     : "border-terminal-border text-terminal-muted bg-terminal-black/30"
                 }`}>
                   Tests: {checkStatus ? (checkStatus.test_passed ? "PASS" : "FAIL") : "UNRUN"}
@@ -222,7 +222,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   checkStatus 
                     ? checkStatus.lint_passed 
                       ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5 hover:border-terminal-green/60" 
-                      : "border-yellow-500/30 text-yellow-500 bg-yellow-500/5 hover:border-yellow-500/60"
+                      : "border-terminal-yellow/30 text-terminal-yellow bg-terminal-yellow/5 hover:border-terminal-yellow/60"
                     : "border-terminal-border text-terminal-muted bg-terminal-black/30"
                 }`}>
                   Lint: {checkStatus ? (checkStatus.lint_passed ? "PASS" : "WARN") : "UNRUN"}
@@ -410,10 +410,10 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                     <div className="flex items-center justify-between border-b border-terminal-border/30 pb-2 mb-3 shrink-0">
                       <div className="flex items-center space-x-1.5 font-bold text-[10px] uppercase font-mono tracking-wider">
                         {status === "pending" && <Plus className="w-3.5 h-3.5 text-terminal-muted" />}
-                        {status === "in_progress" && <RefreshCw className="w-3.5 h-3.5 text-yellow-500 animate-spin" />}
+                        {status === "in_progress" && <RefreshCw className="w-3.5 h-3.5 text-terminal-yellow animate-spin" />}
                         {status === "completed" && <CheckCircle className="w-3.5 h-3.5 text-terminal-green" />}
-                        {status === "cancelled" && <XCircle className="w-3.5 h-3.5 text-red-500" />}
-                        <span className={status === "in_progress" ? "text-yellow-500" : status === "completed" ? "text-terminal-green" : status === "cancelled" ? "text-red-500" : "text-terminal-text"}>
+                        {status === "cancelled" && <XCircle className="w-3.5 h-3.5 text-terminal-red" />}
+                        <span className={status === "in_progress" ? "text-terminal-yellow" : status === "completed" ? "text-terminal-green" : status === "cancelled" ? "text-terminal-red" : "text-terminal-text"}>
                           {status.replace("_", " ")}
                         </span>
                       </div>
@@ -435,13 +435,13 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                                 <button onClick={() => onUpdateTaskStatus(task.id, "pending")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-terminal-text text-terminal-muted font-bold text-[8px] uppercase font-mono">PND</button>
                               )}
                               {status !== "in_progress" && (
-                                <button onClick={() => onUpdateTaskStatus(task.id, "in_progress")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-yellow-500 text-terminal-muted font-bold text-[8px] uppercase font-mono">WRK</button>
+                                <button onClick={() => onUpdateTaskStatus(task.id, "in_progress")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-terminal-yellow text-terminal-muted font-bold text-[8px] uppercase font-mono">WRK</button>
                               )}
                               {status !== "completed" && (
                                 <button onClick={() => onUpdateTaskStatus(task.id, "completed")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-terminal-green text-terminal-muted font-bold text-[8px] uppercase font-mono">DON</button>
                               )}
                               {status !== "cancelled" && (
-                                <button onClick={() => onUpdateTaskStatus(task.id, "cancelled")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-red-500 text-terminal-muted font-bold text-[8px] uppercase font-mono">CNL</button>
+                                <button onClick={() => onUpdateTaskStatus(task.id, "cancelled")} className="p-0.5 rounded border border-terminal-border bg-terminal-gray hover:text-terminal-red text-terminal-muted font-bold text-[8px] uppercase font-mono">CNL</button>
                               )}
                             </div>
                           </div>
@@ -587,7 +587,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                           </button>
                           <button
                             onClick={() => onDeleteSkill(sk.id, sk.name)}
-                            className="p-1 rounded border border-terminal-border text-terminal-muted hover:text-red-500 hover:bg-red-500/10 transition-all"
+                            className="p-1 rounded border border-terminal-border text-terminal-muted hover:text-terminal-red hover:bg-terminal-red/10 transition-all"
                             title="Remove Skill"
                           >
                             <Trash className="w-3.5 h-3.5" />
@@ -706,8 +706,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                     </div>
                     <div className="flex items-center space-x-1.5 shrink-0">
                       {entry.action === "created" && <Plus className="w-3.5 h-3.5 text-terminal-green" />}
-                      {entry.action === "updated" && <RefreshCw className="w-3.5 h-3.5 text-yellow-500" />}
-                      {entry.action === "deleted" && <Trash className="w-3.5 h-3.5 text-red-500" />}
+                      {entry.action === "updated" && <RefreshCw className="w-3.5 h-3.5 text-terminal-yellow" />}
+                      {entry.action === "deleted" && <Trash className="w-3.5 h-3.5 text-terminal-red" />}
                     </div>
                     <span className="font-bold text-terminal-text">{entry.entity_type}</span>
                     <span className="text-terminal-muted">{entry.action}</span>

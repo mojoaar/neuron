@@ -113,7 +113,7 @@ export const ClusterDashboard: React.FC<ClusterDashboardProps> = ({
         </div>
         <button
           onClick={handleDeleteCluster}
-          className="py-1 px-3 rounded border border-red-950 hover:border-red-500 bg-red-950/10 hover:bg-red-500/10 text-red-500 text-[10px] font-bold uppercase transition-all flex items-center space-x-1"
+          className="py-1 px-3 rounded border border-terminal-red hover:border-terminal-red bg-terminal-red/10 hover:bg-terminal-red/10 text-terminal-red text-[10px] font-bold uppercase transition-all flex items-center space-x-1"
         >
           <Trash className="w-3.5 h-3.5" />
           <span>Delete Cluster</span>
@@ -180,7 +180,7 @@ export const ClusterDashboard: React.FC<ClusterDashboardProps> = ({
               <div className="flex items-center justify-between border-t border-terminal-border/30 pt-3">
                 <button
                   onClick={() => handleRemoveProject(proj.id)}
-                  className="py-1 px-2.5 rounded border border-red-950/40 hover:border-red-500 bg-red-950/10 hover:bg-red-500/10 text-red-500 text-[9px] font-bold uppercase transition-all opacity-0 group-hover:opacity-100"
+                  className="py-1 px-2.5 rounded border border-terminal-red/30 hover:border-terminal-red bg-terminal-red/10 hover:bg-terminal-red/10 text-terminal-red text-[9px] font-bold uppercase transition-all opacity-0 group-hover:opacity-100"
                   title="Remove from Cluster"
                 >
                   Unbind

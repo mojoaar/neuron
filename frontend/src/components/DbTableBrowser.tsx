@@ -215,10 +215,10 @@ export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
                                   <td className="px-3.5 py-2 text-left">
                                     {deletingId === projectId ? (
                                       <div className="flex items-center space-x-2">
-                                        <span className="text-[9px] text-red-500 font-bold uppercase animate-pulse">DELETE ALL DATA?</span>
+                                        <span className="text-[9px] text-terminal-red font-bold uppercase animate-pulse">DELETE ALL DATA?</span>
                                         <button
                                           onClick={() => handleDeleteProject(projectId)}
-                                          className="bg-red-500 hover:bg-red-600 text-white font-bold text-[9px] px-2 py-0.5 rounded transition-all"
+                                          className="bg-terminal-red hover:bg-terminal-red text-white font-bold text-[9px] px-2 py-0.5 rounded transition-all"
                                         >
                                           CONFIRM
                                         </button>
@@ -246,7 +246,7 @@ export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
                                         ) : null}
                                         <button
                                           onClick={() => setDeletingId(projectId)}
-                                          className="px-2 py-0.5 rounded border border-red-950 bg-red-950/20 hover:border-red-500 hover:bg-red-500/10 text-red-500 text-[9px] font-bold uppercase transition-all flex items-center space-x-1"
+                                          className="px-2 py-0.5 rounded border border-terminal-red bg-terminal-red/20 hover:border-terminal-red hover:bg-terminal-red/10 text-terminal-red text-[9px] font-bold uppercase transition-all flex items-center space-x-1"
                                           title="Permanently Delete Project"
                                         >
                                           <Trash className="w-3 h-3" />

@@ -55,7 +55,7 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
               >
                 <div className="flex items-center space-x-1.5">
                   <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
-                    isGet ? "bg-terminal-green/10 border border-terminal-green/30 text-terminal-green" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-500"
+                    isGet ? "bg-terminal-green/10 border border-terminal-green/30 text-terminal-green" : "bg-terminal-yellow/10 border border-terminal-yellow/30 text-terminal-yellow"
                   }`}>
                     {ep.method}
                   </span>
@@ -131,7 +131,7 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
               <div className="flex items-center space-x-3 text-[9px] font-bold font-mono">
                 {apiResStatus && (
                   <span className={`px-1.5 py-0.5 border rounded uppercase ${
-                    apiResStatus.startsWith("2") ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5" : "border-red-500/35 text-red-500 bg-red-500/5"
+                    apiResStatus.startsWith("2") ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5" : "border-terminal-red/35 text-terminal-red bg-terminal-red/5"
                   }`}>
                     {apiResStatus}
                   </span>
