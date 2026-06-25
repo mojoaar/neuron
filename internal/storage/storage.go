@@ -837,7 +837,7 @@ func (s *Storage) QueryTableData(ctx context.Context, tableName string) ([]strin
 	}
 	defer rows.Close()
 
-	var grid [][]interface{}
+	grid := [][]interface{}{}
 
 	for rows.Next() {
 		values := make([]interface{}, len(columns))

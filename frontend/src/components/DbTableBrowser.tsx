@@ -119,53 +119,58 @@ export const DbTableBrowser: React.FC = () => {
                   <span>Scanning rows...</span>
                 </div>
               ) : tableData ? (
-                <table className="w-full border-collapse text-left text-[11px] font-mono whitespace-nowrap">
-                  <thead>
-                    <tr className="border-b border-terminal-border bg-terminal-gray/40 select-none">
-                      {tableData.columns.map((col) => (
-                        <th
-                          key={col}
-                          className="px-3.5 py-2.5 font-bold uppercase text-terminal-green border-r border-terminal-border/30 last:border-r-0"
-                        >
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableData.rows.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={tableData.columns.length}
-                          className="px-4 py-8 text-center text-terminal-muted italic"
-                        >
-                          Table empty. No rows found.
-                        </td>
-                      </tr>
-                    ) : (
-                      tableData.rows.map((row, rIdx) => (
-                        <tr
-                          key={rIdx}
-                          className="border-b border-terminal-border/20 last:border-b-0 hover:bg-terminal-gray/25 transition-colors"
-                        >
-                          {row.map((cell, cIdx) => {
-                            const strVal = cell === null || cell === undefined ? "NULL" : String(cell);
-                            const isLong = strVal.length > 50;
-                            return (
-                              <td
-                                key={cIdx}
-                                className="px-3.5 py-2.5 border-r border-terminal-border/20 last:border-r-0 max-w-xs truncate text-terminal-text select-text"
-                                title={strVal}
-                              >
-                                {isLong ? `${strVal.slice(0, 50)}...` : strVal}
-                              </td>
-                            );
-                          })}
+                (() => {
+                  const rows = tableData.rows || [];
+                  return (
+                    <table className="w-full border-collapse text-left text-[11px] font-mono whitespace-nowrap">
+                      <thead>
+                        <tr className="border-b border-terminal-border bg-terminal-gray/40 select-none">
+                          {tableData.columns.map((col) => (
+                            <th
+                              key={col}
+                              className="px-3.5 py-2.5 font-bold uppercase text-terminal-green border-r border-terminal-border/30 last:border-r-0"
+                            >
+                              {col}
+                            </th>
+                          ))}
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {rows.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={tableData.columns.length}
+                              className="px-4 py-8 text-center text-terminal-muted italic"
+                            >
+                              Table empty. No rows found.
+                            </td>
+                          </tr>
+                        ) : (
+                          rows.map((row, rIdx) => (
+                            <tr
+                              key={rIdx}
+                              className="border-b border-terminal-border/20 last:border-b-0 hover:bg-terminal-gray/25 transition-colors"
+                            >
+                              {row.map((cell, cIdx) => {
+                                const strVal = cell === null || cell === undefined ? "NULL" : String(cell);
+                                const isLong = strVal.length > 50;
+                                return (
+                                  <td
+                                    key={cIdx}
+                                    className="px-3.5 py-2.5 border-r border-terminal-border/20 last:border-r-0 max-w-xs truncate text-terminal-text select-text"
+                                    title={strVal}
+                                  >
+                                    {isLong ? `${strVal.slice(0, 50)}...` : strVal}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  );
+                })()
               ) : (
                 <div className="text-center p-12 text-terminal-muted italic text-xs">
                   No query results loaded.
