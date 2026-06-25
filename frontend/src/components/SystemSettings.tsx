@@ -42,6 +42,8 @@ interface SystemSettingsProps {
   onSaveTemplate: () => void;
   onAddCatalogSkill: (e: React.FormEvent) => void;
   onDeleteCatalogSkill: (url: string, label: string) => void;
+  terminalCollapsedByDefault: boolean;
+  onToggleTerminalCollapseDefault: (val: boolean) => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -75,6 +77,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onSaveTemplate,
   onAddCatalogSkill,
   onDeleteCatalogSkill,
+  terminalCollapsedByDefault,
+  onToggleTerminalCollapseDefault,
 }) => {
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full font-mono">
@@ -119,6 +123,22 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             <span>Scope Lock Active: {cwd}</span>
           </div>
         )}
+
+        {/* Toggle default terminal collapse setting */}
+        <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-terminal-text">[ Collapse HUD Console by default ]</div>
+            <p className="text-[10px] text-terminal-muted leading-relaxed">Keep the diagnostic terminal collapsed on initial page load to maximize viewport space.</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={terminalCollapsedByDefault}
+              onChange={(e) => onToggleTerminalCollapseDefault(e.target.checked)}
+              className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+            />
+          </label>
+        </div>
       </div>
 
       {/* Templates Panel */}

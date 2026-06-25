@@ -109,6 +109,8 @@ export default function Page() {
               onSaveTemplate={state.handleSaveTemplate}
               onAddCatalogSkill={state.handleAddCatalogSkill}
               onDeleteCatalogSkill={state.handleDeleteCatalogSkill}
+              terminalCollapsedByDefault={state.terminalCollapsedByDefault}
+              onToggleTerminalCollapseDefault={state.handleToggleTerminalCollapseDefault}
             />
           ) : state.selectedProject === null ? (
             <Provisioner

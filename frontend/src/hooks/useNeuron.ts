@@ -30,6 +30,7 @@ export const useNeuron = () => {
   const [discoveredDirs, setDiscoveredDirs] = useState<{ name: string; path: string; tech_stack?: string }[]>([]);
   const [discoveredStacks, setDiscoveredStacks] = useState<Record<string, string>>({});
   const [isDiscovering, setIsDiscovering] = useState(false);
+  const [terminalCollapsedByDefault, setTerminalCollapsedByDefault] = useState(false);
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -202,6 +203,7 @@ export const useNeuron = () => {
     fetchSystemTemplates();
     fetchCatalogSkills();
     fetchHiddenProjectIds();
+    fetchTerminalSettings();
     fetchDiscoveredDirs();
     fetchProjects(true);
   }, []);
@@ -421,6 +423,37 @@ export const useNeuron = () => {
           }
         }
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchTerminalSettings = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=terminal_collapsed_by_default");
+      if (res.ok) {
+        const data = await res.json();
+        const collapsed = data.value === "true";
+        setTerminalCollapsedByDefault(collapsed);
+        setIsTerminalCollapsed(collapsed);
+      }
+    } catch (err) {
+      console.error("Failed to load terminal settings:", err);
+    }
+  };
+
+  const handleToggleTerminalCollapseDefault = async (val: boolean) => {
+    setTerminalCollapsedByDefault(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "terminal_collapsed_by_default",
+          value: val ? "true" : "false",
+        }),
+      });
+      addLog(`SUCCESS: Console logs default layout updated. Default collapse: ${String(val).toUpperCase()}`, "success");
     } catch (err) {
       console.error(err);
     }
@@ -1030,6 +1063,8 @@ export const useNeuron = () => {
     setShowApiDocs,
     showDbViewer,
     setShowDbViewer,
+    terminalCollapsedByDefault,
+    setTerminalCollapsedByDefault,
     selectedDocSlug,
     setSelectedDocSlug,
     isTerminalCollapsed,
@@ -1140,6 +1175,7 @@ export const useNeuron = () => {
     handleSaveScopePath,
     handleResetScopePath,
     handleSaveTemplate,
+    handleToggleTerminalCollapseDefault,
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,
     handleProvision,
