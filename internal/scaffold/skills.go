@@ -3,6 +3,7 @@ package scaffold
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -245,9 +246,20 @@ func DownloadRemoteSkill(projectPath, urlStr string) (*storage.Skill, error) {
 		return nil, fmt.Errorf("agentskill.sh API returned HTTP status %d", resp.StatusCode)
 	}
 
+	// Limit download size to 1 MB max to prevent memory bloat DOS
+	limitedBody := io.LimitReader(resp.Body, 1<<20)
+
 	var payload RemoteSkillPayload
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.NewDecoder(limitedBody).Decode(&payload); err != nil {
 		return nil, fmt.Errorf("failed to decode response JSON: %w", err)
+	}
+
+	if len(payload.SkillFiles) > 20 {
+		return nil, fmt.Errorf("remote skill contains too many auxiliary files (max 20)")
+	}
+
+	if len(payload.SkillMd) > 500000 {
+		return nil, fmt.Errorf("remote SKILL.md size exceeds maximum allowed capacity")
 	}
 
 	// Ensure TUI symlinks exist
@@ -257,22 +269,64 @@ func DownloadRemoteSkill(projectPath, urlStr string) (*storage.Skill, error) {
 
 	// Create local directories under .agents/skills/owner/name
 	localSkillDir := filepath.Join(projectPath, ".agents", "skills", owner, name)
-	if err := os.MkdirAll(localSkillDir, 0755); err != nil {
+	localSkillDirAbs, err := filepath.Abs(localSkillDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute local path: %w", err)
+	}
+
+	if err := os.MkdirAll(localSkillDirAbs, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create skill directory: %w", err)
 	}
 
+	// Allowed plaintext configuration / instruction extensions
+	allowedExts := map[string]bool{
+		".md":         true,
+		".json":       true,
+		".yaml":       true,
+		".yml":        true,
+		".toml":       true,
+		".txt":        true,
+		".sh":         true,
+		".py":         true,
+		".js":         true,
+		".ts":         true,
+		".ps1":        true,
+		".cfg":        true,
+		".conf":       true,
+		".go":         true,
+		".html":       true,
+		".css":        true,
+		".properties": true,
+	}
+
 	// Write SKILL.md
-	if err := os.WriteFile(filepath.Join(localSkillDir, "SKILL.md"), []byte(payload.SkillMd), 0644); err != nil {
+	skillMdPath := filepath.Join(localSkillDirAbs, "SKILL.md")
+	if err := os.WriteFile(skillMdPath, []byte(payload.SkillMd), 0644); err != nil {
 		return nil, fmt.Errorf("failed to write SKILL.md: %w", err)
 	}
 
 	// Write auxiliary files
 	for _, sf := range payload.SkillFiles {
-		sfPath := filepath.Join(localSkillDir, sf.Path)
-		if err := os.MkdirAll(filepath.Dir(sfPath), 0755); err != nil {
+		ext := strings.ToLower(filepath.Ext(sf.Path))
+		if !allowedExts[ext] && sf.Path != "SKILL.md" {
+			return nil, fmt.Errorf("file type not allowed for custom skills: %s", sf.Path)
+		}
+
+		// Prevent path traversal escapes
+		sfPath := filepath.Join(localSkillDirAbs, sf.Path)
+		sfPathAbs, err := filepath.Abs(sfPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve absolute file path: %w", err)
+		}
+
+		if !strings.HasPrefix(sfPathAbs, localSkillDirAbs) {
+			return nil, fmt.Errorf("malicious path traversal detected in auxiliary skill files: %s", sf.Path)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(sfPathAbs), 0755); err != nil {
 			return nil, fmt.Errorf("failed to create subdirectories for skill file: %w", err)
 		}
-		if err := os.WriteFile(sfPath, []byte(sf.Content), 0644); err != nil {
+		if err := os.WriteFile(sfPathAbs, []byte(sf.Content), 0644); err != nil {
 			return nil, fmt.Errorf("failed to write auxiliary skill file %s: %w", sf.Path, err)
 		}
 	}

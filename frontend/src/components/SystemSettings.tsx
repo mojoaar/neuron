@@ -5,16 +5,11 @@ import {
   Save, 
   Trash, 
   Plus, 
-  Play, 
-  HelpCircle, 
-  Cpu, 
-  Layers, 
-  FileCode, 
-  Smartphone, 
-  Globe, 
-  Terminal as TerminalIcon 
+  FileCode,
+  Cpu
 } from "lucide-react";
 import { SystemTemplate, CatalogSkill } from "../types";
+import { TechIcon } from "./TechIcon";
 
 interface SystemSettingsProps {
   cwd: string;
@@ -48,18 +43,6 @@ interface SystemSettingsProps {
   onAddCatalogSkill: (e: React.FormEvent) => void;
   onDeleteCatalogSkill: (url: string, label: string) => void;
 }
-
-const getStackIcon = (stack: string) => {
-  switch (stack) {
-    case "go": return <Cpu className="w-3.5 h-3.5" />;
-    case "node": return <Layers className="w-3.5 h-3.5" />;
-    case "html": return <FileCode className="w-3.5 h-3.5" />;
-    case "python": return <Cpu className="w-3.5 h-3.5" />;
-    case "nextjs": return <Globe className="w-3.5 h-3.5" />;
-    case "android": return <Smartphone className="w-3.5 h-3.5" />;
-    default: return <TerminalIcon className="w-3.5 h-3.5" />;
-  }
-};
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
   cwd,
@@ -287,7 +270,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
                 <div key={sk.url} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between space-x-3">
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center space-x-1.5">
-                      {getStackIcon(sk.tech_stack)}
+                      <TechIcon tech={sk.tech_stack} />
                       <span className="font-bold text-xs text-terminal-text truncate">{sk.label}</span>
                       <span className="text-[8px] font-bold text-terminal-green px-1 border border-terminal-green/30 bg-terminal-green/5 rounded uppercase shrink-0 font-mono">
                         {sk.tech_stack}

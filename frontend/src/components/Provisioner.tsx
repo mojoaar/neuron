@@ -1,6 +1,7 @@
 import React from "react";
-import { Sparkles, Database, RefreshCw, Cpu, Layers, FileCode, Smartphone, Globe, Terminal as TerminalIcon } from "lucide-react";
+import { Sparkles, Database, RefreshCw } from "lucide-react";
 import { CatalogSkill } from "../types";
+import { TechIcon } from "./TechIcon";
 
 interface ProvisionerProps {
   provName: string;
@@ -21,18 +22,6 @@ interface ProvisionerProps {
   onQuickTrackProject: (dirName: string, dirPath: string, tech: string) => void;
   onRefreshDiscovery: () => void;
 }
-
-const getStackIcon = (stack: string) => {
-  switch (stack) {
-    case "go": return <Cpu className="w-3.5 h-3.5" />;
-    case "node": return <Layers className="w-3.5 h-3.5" />;
-    case "html": return <FileCode className="w-3.5 h-3.5" />;
-    case "python": return <Cpu className="w-3.5 h-3.5" />;
-    case "nextjs": return <Globe className="w-3.5 h-3.5" />;
-    case "android": return <Smartphone className="w-3.5 h-3.5" />;
-    default: return <TerminalIcon className="w-3.5 h-3.5" />;
-  }
-};
 
 export const Provisioner: React.FC<ProvisionerProps> = ({
   provName,
@@ -193,7 +182,7 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
               <div key={dir.name} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between space-x-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-1.5">
-                    {getStackIcon(discoveredStacks[dir.name] || "go")}
+                    <TechIcon tech={discoveredStacks[dir.name] || "go"} />
                     <span className="font-bold text-xs text-terminal-text truncate">{dir.name}</span>
                   </div>
                   <div className="text-[9px] text-terminal-muted font-mono mt-0.5 truncate">{dir.path}</div>

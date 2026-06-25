@@ -1,13 +1,8 @@
 import React from "react";
 import { 
-  Folder, 
-  Layers, 
   Settings, 
   HelpCircle, 
-  Globe, 
-  Cpu, 
   FileCode, 
-  Smartphone, 
   Terminal as TerminalIcon, 
   Plus, 
   Trash, 
@@ -16,6 +11,7 @@ import {
   Moon 
 } from "lucide-react";
 import { Project } from "../types";
+import { TechIcon } from "./TechIcon";
 
 interface SidebarProps {
   projects: Project[];
@@ -34,18 +30,6 @@ interface SidebarProps {
   onHideProject: (id: string) => void;
   onShutdownServer: () => void;
 }
-
-const getStackIcon = (stack: string) => {
-  switch (stack) {
-    case "go": return <Cpu className="w-3.5 h-3.5" />;
-    case "node": return <Layers className="w-3.5 h-3.5" />;
-    case "html": return <FileCode className="w-3.5 h-3.5" />;
-    case "python": return <Cpu className="w-3.5 h-3.5" />;
-    case "nextjs": return <Globe className="w-3.5 h-3.5" />;
-    case "android": return <Smartphone className="w-3.5 h-3.5" />;
-    default: return <TerminalIcon className="w-3.5 h-3.5" />;
-  }
-};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   projects,
@@ -119,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => onSelectProject(p)}
                       className="flex items-center space-x-2 min-w-0 flex-1 text-left"
                     >
-                      {getStackIcon(p.tech_stack)}
+                      <TechIcon tech={p.tech_stack} />
                       <span className="truncate font-bold">{p.name}</span>
                     </button>
                     <button

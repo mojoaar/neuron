@@ -16,8 +16,10 @@ import (
 	"strings"
 	"time"
 
+	"neuron/internal/export"
 	"neuron/internal/scaffold"
 	"neuron/internal/storage"
+	"neuron/internal/techstack"
 )
 
 //go:embed all:frontend/out
@@ -158,8 +160,8 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if req.TechStack != "go" && req.TechStack != "node" && req.TechStack != "html" && req.TechStack != "powershell" && req.TechStack != "nextjs" && req.TechStack != "python" && req.TechStack != "android" {
-			respondError(w, http.StatusBadRequest, "Unsupported tech stack (supported: go, node, html, powershell, nextjs, python, android)")
+		if !techstack.IsValid(req.TechStack) {
+			respondError(w, http.StatusBadRequest, "Unsupported tech stack (supported: " + techstack.SupportedList() + ")")
 			return
 		}
 
@@ -259,9 +261,9 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			var exportErr error
 			switch strings.ToLower(p.TechStack) {
 			case "go", "html", "python", "android":
-				exportErr = exportToGoMakefile(p.Path, skills)
+				exportErr = export.ExportToGoMakefile(p.Path, skills)
 			case "node", "nextjs":
-				exportErr = exportToNodePackageJSON(p.Path, skills)
+				exportErr = export.ExportToNodePackageJSON(p.Path, skills)
 			}
 			if exportErr != nil {
 				fmt.Printf("Warning: failed to auto-export skills on provision: %v\n", exportErr)
@@ -506,9 +508,9 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 				var exportErr error
 				switch strings.ToLower(proj.TechStack) {
 				case "go", "html", "python", "android":
-					exportErr = exportToGoMakefile(proj.Path, skills)
+					exportErr = export.ExportToGoMakefile(proj.Path, skills)
 				case "node", "nextjs":
-					exportErr = exportToNodePackageJSON(proj.Path, skills)
+					exportErr = export.ExportToNodePackageJSON(proj.Path, skills)
 				default:
 					exportErr = fmt.Errorf("unsupported stack '%s'", proj.TechStack)
 				}
@@ -588,9 +590,9 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 						proj, _ := s.store.GetProject(ctx, projectID)
 						switch strings.ToLower(proj.TechStack) {
 						case "go", "html", "python", "android":
-							_ = exportToGoMakefile(proj.Path, updatedSkills)
+							_ = export.ExportToGoMakefile(proj.Path, updatedSkills)
 						case "node", "nextjs":
-							_ = exportToNodePackageJSON(proj.Path, updatedSkills)
+							_ = export.ExportToNodePackageJSON(proj.Path, updatedSkills)
 						}
 					}
 
@@ -608,9 +610,9 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 						proj, _ := s.store.GetProject(ctx, projectID)
 						switch strings.ToLower(proj.TechStack) {
 						case "go", "html", "python", "android":
-							_ = exportToGoMakefile(proj.Path, updatedSkills)
+							_ = export.ExportToGoMakefile(proj.Path, updatedSkills)
 						case "node", "nextjs":
-							_ = exportToNodePackageJSON(proj.Path, updatedSkills)
+							_ = export.ExportToNodePackageJSON(proj.Path, updatedSkills)
 						}
 					}
 
@@ -806,70 +808,6 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 	default:
 		respondError(w, http.StatusNotFound, "Not Found")
 	}
-}
-
-func exportToGoMakefile(projPath string, skills []*storage.Skill) error {
-	makefile := filepath.Join(projPath, "Makefile")
-	content, err := os.ReadFile(makefile)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	var sb strings.Builder
-	sb.WriteString("\n# --- BEGIN NEURON SKILLS ---\n")
-	for _, sk := range skills {
-		if sk.Description != "" {
-			sb.WriteString(fmt.Sprintf("# Skill: %s\n", sk.Description))
-		}
-		sb.WriteString(fmt.Sprintf("%s:\n\t%s\n\n", sk.Name, sk.ExecutionPath))
-	}
-	sb.WriteString("# --- END NEURON SKILLS ---\n")
-	skillsSection := sb.String()
-
-	original := string(content)
-	startMarker := "# --- BEGIN NEURON SKILLS ---"
-	endMarker := "# --- END NEURON SKILLS ---"
-
-	var updated string
-	if strings.Contains(original, startMarker) && strings.Contains(original, endMarker) {
-		parts := strings.Split(original, startMarker)
-		afterBlock := strings.Split(parts[1], endMarker)
-		updated = parts[0] + strings.TrimSpace(skillsSection) + "\n" + afterBlock[1]
-	} else {
-		updated = original + skillsSection
-	}
-
-	return os.WriteFile(makefile, []byte(updated), 0644)
-}
-
-func exportToNodePackageJSON(projPath string, skills []*storage.Skill) error {
-	pkgFile := filepath.Join(projPath, "package.json")
-	content, err := os.ReadFile(pkgFile)
-	if err != nil {
-		return err
-	}
-
-	var data map[string]interface{}
-	if err := json.Unmarshal(content, &data); err != nil {
-		return err
-	}
-
-	scripts, ok := data["scripts"].(map[string]interface{})
-	if !ok {
-		scripts = make(map[string]interface{})
-	}
-
-	for _, sk := range skills {
-		scripts[sk.Name] = sk.ExecutionPath
-	}
-	data["scripts"] = scripts
-
-	updated, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(pkgFile, updated, 0644)
 }
 
 func generateID() string {
@@ -1257,44 +1195,6 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func detectTechStack(dirPath string) string {
-	if _, err := os.Stat(filepath.Join(dirPath, "go.mod")); err == nil {
-		return "go"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "next.config.js")); err == nil {
-		return "nextjs"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "next.config.mjs")); err == nil {
-		return "nextjs"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "package.json")); err == nil {
-		return "node"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "requirements.txt")); err == nil {
-		return "python"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "pyproject.toml")); err == nil {
-		return "python"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "build.gradle")); err == nil {
-		return "android"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "build.gradle.kts")); err == nil {
-		return "android"
-	}
-	if _, err := os.Stat(filepath.Join(dirPath, "index.html")); err == nil {
-		return "html"
-	}
-	if files, err := os.ReadDir(dirPath); err == nil {
-		for _, file := range files {
-			if !file.IsDir() && strings.HasSuffix(file.Name(), ".ps1") {
-				return "powershell"
-			}
-		}
-	}
-	return "go"
-}
-
 func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodGet {
@@ -1340,7 +1240,7 @@ func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
 		cleanedPath := filepath.Clean(absPath)
 
 		if !registeredPaths[cleanedPath] {
-			detected := detectTechStack(absPath)
+			detected := techstack.Detect(absPath)
 			discovered = append(discovered, DiscoveredFolder{
 				Name:      name,
 				Path:      absPath,

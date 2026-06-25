@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"neuron/internal/techstack"
+
 	_ "github.com/duckdb/duckdb-go/v2"
 )
 
@@ -349,8 +351,8 @@ func (s *Storage) prepopulateSystemTables() error {
 	}
 
 	if count == 0 {
-		stacks := []string{"go", "node", "html", "powershell", "nextjs", "python", "android"}
-		for _, tech := range stacks {
+		for _, st := range techstack.All {
+			tech := st.ID
 			agentsTemplate := GetDefaultAgentsTemplate(tech)
 			planTemplate := GetDefaultPlanTemplate(tech)
 			query := "INSERT INTO templates (tech_stack, agents_md, plan_md, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP);"

@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"neuron/internal/export"
 	"neuron/internal/scaffold"
 	"neuron/internal/storage"
+	"neuron/internal/techstack"
 
 	"github.com/spf13/cobra"
 )
@@ -27,8 +29,8 @@ var (
 			projectName := args[0]
 			tech := strings.ToLower(techStack)
 
-			if tech != "go" && tech != "node" && tech != "html" && tech != "powershell" && tech != "nextjs" && tech != "python" && tech != "android" {
-				return fmt.Errorf("unsupported tech stack '%s' (supported: go, node, html, powershell, nextjs, python, android)", techStack)
+			if !techstack.IsValid(tech) {
+				return fmt.Errorf("unsupported tech stack '%s' (supported: %s)", techStack, techstack.SupportedList())
 			}
 
 			p := targetPath
@@ -129,9 +131,9 @@ var (
 				var exportErr error
 				switch strings.ToLower(tech) {
 				case "go", "html", "python", "android":
-					exportErr = exportToGoMakefile(absPath, skills)
+					exportErr = export.ExportToGoMakefile(absPath, skills)
 				case "node", "nextjs":
-					exportErr = exportToNodePackageJSON(absPath, skills)
+					exportErr = export.ExportToNodePackageJSON(absPath, skills)
 				}
 				if exportErr != nil {
 					fmt.Printf("Warning: failed to auto-export skills: %v\n", exportErr)
