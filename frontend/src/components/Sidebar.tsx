@@ -9,7 +9,8 @@ import {
   AlertTriangle, 
   Sun, 
   Moon,
-  Github
+  Github,
+  Database
 } from "lucide-react";
 import { Project } from "../types";
 import { TechIcon } from "./TechIcon";
@@ -120,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             ) : (
               visibleProjects.map((p) => {
-                const isSelected = selectedProject?.id === p.id;
+                const isSelected = selectedProject?.id === p.id && !showSystemSettings && !showDocs && !showApiDocs;
                 return (
                   <div
                     key={p.id}
@@ -207,7 +208,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Shutdown Trigger Area */}
-      <div className="p-3 border-t border-terminal-border bg-terminal-black/30">
+      <div className="p-3 border-t border-terminal-border bg-terminal-black/30 space-y-2">
+        <div className="flex flex-col space-y-1 font-mono text-[9px] text-terminal-muted font-bold select-none mb-1">
+          <div className="flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40">
+            <Database className="w-3 h-3 text-terminal-green" />
+            <span>DUCKDB:ACTIVE</span>
+          </div>
+          <div className="flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse shrink-0" />
+            <span>SERVER:127.0.0.1:8080</span>
+          </div>
+        </div>
+
         <button
           onClick={onShutdownServer}
           className="w-full py-1.5 px-3 rounded border border-red-950 hover:border-red-500 bg-red-950/20 hover:bg-red-500/10 text-red-500 font-mono text-[10px] font-bold uppercase transition-all flex items-center justify-center space-x-1"
