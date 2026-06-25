@@ -121,10 +121,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
         )}
       </div>
 
-      {/* Grid for Templates and Catalog */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Templates Panel */}
-        <div className="lg:col-span-6 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col max-h-[750px]">
+      {/* Templates Panel */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col">
           <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
             <div className="flex items-center space-x-2 text-terminal-green">
               <FileCode className="w-4 h-4" />
@@ -176,8 +174,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
           </div>
         </div>
 
-        {/* Recommended Catalog Panel */}
-        <div className="lg:col-span-6 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col max-h-[750px]">
+      {/* Recommended Catalog Panel */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col max-h-[750px]">
           <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
             <div className="flex items-center space-x-2 text-terminal-green">
               <Cpu className="w-4 h-4" />
@@ -290,7 +288,6 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 };
