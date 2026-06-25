@@ -11,3 +11,8 @@ bin/
 # Test output
 *.test
 *.out
+
+# Scaffolded test apps
+my-go-app/
+my-node-app/
+
