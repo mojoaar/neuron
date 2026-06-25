@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*' # Trigger automatically whenever a tagged release (v1.4.0, etc.) is pushed!
 
+permissions:
+  contents: write
+
 jobs:
   build-release:
     name: Build & Release Binaries
@@ -32,7 +35,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Compile Web HUD static assets
         run: |
