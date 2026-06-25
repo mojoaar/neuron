@@ -35,7 +35,12 @@ export default function Page() {
           showSystemSettings={state.showSystemSettings}
           setShowSystemSettings={state.setShowSystemSettings}
           onSelectProject={state.handleSelectProject}
-          onSelectProvisioner={() => state.setSelectedProject(null)}
+          onSelectProvisioner={() => {
+            state.setSelectedProject(null);
+            state.setShowDocs(false);
+            state.setShowApiDocs(false);
+            state.setShowSystemSettings(false);
+          }}
           onHideProject={state.handleHideProject}
           onShutdownServer={state.handleShutdownServer}
           onTriggerSearch={() => state.setShowCommandPalette(true)}
