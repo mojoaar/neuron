@@ -22,6 +22,7 @@ export const useNeuron = () => {
   // Views toggles
   const [showDocs, setShowDocs] = useState(false);
   const [showApiDocs, setShowApiDocs] = useState(false);
+  const [showDbViewer, setShowDbViewer] = useState(false);
   const [selectedDocSlug, setSelectedDocSlug] = useState<"started" | "mcp" | "skills" | "taskboard" | "service">("started");
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [isServerDisconnected, setIsServerDisconnected] = useState(false);
@@ -262,6 +263,7 @@ export const useNeuron = () => {
     setShowSystemSettings(false);
     setShowDocs(false);
     setShowApiDocs(false);
+    setShowDbViewer(false);
     setSelectedProject(proj);
     setActiveTab("plan");
     addLog(`Mounting project environment: [${proj.id.toUpperCase()}] ...`, "system");
@@ -953,6 +955,16 @@ export const useNeuron = () => {
         action: () => setShowApiDocs(true),
       },
       {
+        label: "Open DuckDB Relational Table Viewer",
+        category: "Navigation",
+        action: () => {
+          setShowDbViewer(true);
+          setShowDocs(false);
+          setShowApiDocs(false);
+          setShowSystemSettings(false);
+        },
+      },
+      {
         label: "Show Active Sub-Workspaces",
         category: "Navigation",
         action: () => setSelectedProject(null),
@@ -1016,6 +1028,8 @@ export const useNeuron = () => {
     setShowDocs,
     showApiDocs,
     setShowApiDocs,
+    showDbViewer,
+    setShowDbViewer,
     selectedDocSlug,
     setSelectedDocSlug,
     isTerminalCollapsed,

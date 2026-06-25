@@ -32,6 +32,7 @@ interface SidebarProps {
   onHideProject: (id: string) => void;
   onShutdownServer: () => void;
   onTriggerSearch: () => void;
+  onOpenDbViewer: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -51,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onHideProject,
   onShutdownServer,
   onTriggerSearch,
+  onOpenDbViewer,
 }) => {
   const visibleProjects = projects.filter((p) => !hiddenProjectIds.includes(p.id));
 
@@ -210,10 +212,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Shutdown Trigger Area */}
       <div className="p-3 border-t border-terminal-border bg-terminal-black/30 space-y-2">
         <div className="flex flex-col space-y-1 font-mono text-[9px] text-terminal-muted font-bold select-none mb-1">
-          <div className="flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40">
-            <Database className="w-3 h-3 text-terminal-green" />
-            <span>DUCKDB:ACTIVE</span>
-          </div>
+          <button
+            onClick={onOpenDbViewer}
+            className="w-full flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40 hover:border-terminal-green/50 hover:bg-terminal-green/5 text-left transition-all text-terminal-muted hover:text-terminal-green group"
+            title="Open DuckDB Relational Table Viewer"
+          >
+            <Database className="w-3 h-3 text-terminal-green group-hover:scale-105 transition-transform" />
+            <span className="font-bold">DUCKDB:ACTIVE</span>
+          </button>
           <div className="flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40">
             <span className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse shrink-0" />
             <span>SERVER:127.0.0.1:8080</span>

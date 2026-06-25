@@ -10,6 +10,7 @@ import { APIPlayground } from "../components/APIPlayground";
 import { DocsReader } from "../components/DocsReader";
 import { ProjectDashboard } from "../components/ProjectDashboard";
 import { Provisioner } from "../components/Provisioner";
+import { DbTableBrowser } from "../components/DbTableBrowser";
 
 export default function Page() {
   const state = useNeuron();
@@ -40,10 +41,17 @@ export default function Page() {
             state.setShowDocs(false);
             state.setShowApiDocs(false);
             state.setShowSystemSettings(false);
+            state.setShowDbViewer(false);
           }}
           onHideProject={state.handleHideProject}
           onShutdownServer={state.handleShutdownServer}
           onTriggerSearch={() => state.setShowCommandPalette(true)}
+          onOpenDbViewer={() => {
+            state.setShowDbViewer(true);
+            state.setShowDocs(false);
+            state.setShowApiDocs(false);
+            state.setShowSystemSettings(false);
+          }}
         />
 
         {/* Dynamic Inner Panel Viewport */}
@@ -67,6 +75,8 @@ export default function Page() {
               isSendingApi={state.isSendingApi}
               onRunApiRequest={state.handleRunApiRequest}
             />
+          ) : state.showDbViewer ? (
+            <DbTableBrowser />
           ) : state.showSystemSettings ? (
             <SystemSettings
               cwd={state.cwd}

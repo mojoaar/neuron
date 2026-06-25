@@ -44,6 +44,7 @@ func NewServer(store *storage.Storage, port int) *Server {
 		// Verify that it physically exists on the disk
 		if info, err := os.Stat(storedPath); err == nil && info.IsDir() {
 			cwd = storedPath
+			fmt.Printf("DUCKDB: Loaded locked workspace scope root path setting: %s\n", cwd)
 		}
 	}
 
@@ -68,6 +69,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/shutdown", s.handleShutdown)
 	mux.HandleFunc("/api/system/settings", s.handleSystemSettings)
 	mux.HandleFunc("/api/system/discover", s.handleDiscover)
+	mux.HandleFunc("/api/system/db/tables", s.handleDbTables)
+	mux.HandleFunc("/api/system/db/table", s.handleDbTable)
 
 	// Embed static client
 	sub, err := fs.Sub(frontendFS, "frontend/out")
@@ -1302,4 +1305,45 @@ func (s *Server) handleSystemSettings(w http.ResponseWriter, r *http.Request) {
 	default:
 		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
+}
+
+func (s *Server) handleDbTables(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	tables, err := s.store.ListTableNames(ctx)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to load database tables: "+err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, tables)
+}
+
+func (s *Server) handleDbTable(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	tableName := r.URL.Query().Get("name")
+	if tableName == "" {
+		respondError(w, http.StatusBadRequest, "Missing name query parameter")
+		return
+	}
+
+	columns, rows, err := s.store.QueryTableData(ctx, tableName)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"columns": columns,
+		"rows":    rows,
+	})
 }

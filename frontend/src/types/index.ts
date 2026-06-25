@@ -60,3 +60,8 @@ export interface ApiEndpoint {
   mockParams: Record<string, string>;
   mockBody?: string;
 }
+
+export interface DbTableData {
+  columns: string[];
+  rows: any[][];
+}

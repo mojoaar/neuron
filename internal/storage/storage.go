@@ -783,3 +783,87 @@ func (s *Storage) DeleteSetting(ctx context.Context, key string) error {
 	_, err := s.db.ExecContext(ctx, "DELETE FROM system_settings WHERE key = ?;", key)
 	return err
 }
+
+// ListTableNames queries DuckDB schema metadata to return all active table names.
+func (s *Storage) ListTableNames(ctx context.Context) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name ASC;")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err == nil {
+			tables = append(tables, name)
+		}
+	}
+	return tables, nil
+}
+
+// QueryTableData queries all columns and rows (up to 500 rows) for a whitelisted table name.
+func (s *Storage) QueryTableData(ctx context.Context, tableName string) ([]string, [][]interface{}, error) {
+	allowed := map[string]bool{
+		"projects":        true,
+		"tasks":           true,
+		"skills":          true,
+		"templates":       true,
+		"skill_catalog":   true,
+		"system_settings": true,
+	}
+	if !allowed[tableName] {
+		return nil, nil, fmt.Errorf("access denied: unauthorized table lookup '%s'", tableName)
+	}
+
+	colRows, err := s.db.QueryContext(ctx, "SELECT column_name FROM information_schema.columns WHERE table_name = ? AND table_schema = 'main' ORDER BY ordinal_position ASC;", tableName)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer colRows.Close()
+
+	var columns []string
+	for colRows.Next() {
+		var col string
+		if err := colRows.Scan(&col); err == nil {
+			columns = append(columns, col)
+		}
+	}
+
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT 500;", tableName)
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var grid [][]interface{}
+
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, nil, err
+		}
+
+		rowVals := make([]interface{}, len(columns))
+		for i, val := range values {
+			if val == nil {
+				rowVals[i] = "NULL"
+			} else {
+				if bytes, ok := val.([]byte); ok {
+					rowVals[i] = string(bytes)
+				} else {
+					rowVals[i] = val
+				}
+			}
+		}
+		grid = append(grid, rowVals)
+	}
+
+	return columns, grid, nil
+}
