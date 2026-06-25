@@ -1,8 +1,8 @@
 # Neuron Git Ignore Configurations
 
 # Compiled Binaries
-neuron
-neuron.exe
+/neuron
+/neuron.exe
 *.exe
 
 # Node dependencies & builds
