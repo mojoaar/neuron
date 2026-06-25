@@ -1,7 +1,7 @@
 # Neuron // Lifecycle Manager 🧠
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-red.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Version: v1.4.0](https://img.shields.io/badge/Version-1.4.0-green.svg)](https://github.com/mojoaar/neuron)
+[![Version: v1.5.0](https://img.shields.io/badge/Version-1.5.0-green.svg)](https://github.com/mojoaar/neuron)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-mojoaar-yellow.svg)](https://buymeacoffee.com/mojoaar)
 
 Neuron is an **AI-native Software Project Lifecycle Manager** that bridges high-level conceptual planning with low-level codebase implementation—automating local workspace directory scaffolding, custom capabilities execution, and task board coordination with a beautiful, single-binary portable Next.js Web HUD dashboard.
@@ -145,26 +145,75 @@ Neuron is built upon the following world-class core dependencies:
 
 ## 📜 Changelog
 
+### v1.5.0 (2026-06-25)
+
+**Architecture & Security:**
+
+*   Refactored 3,400-line monolithic frontend into 14 modular hooks, components, and types
+*   Replaced custom markdown parser with react-markdown + rehype-sanitize for XSS-proof rendering
+*   Sandboxed remote skill downloads with 1MB size limits, path traversal guards, and file type whitelists
+*   Consolidated duplicate skill exporters and tech stack definitions into shared Go packages
+*   Implemented 9-unit storage test suite with `make test` target
+
+**New Features:**
+
+*   Multi-Project Clusters: Group related workspaces with sidebar accordion and bulk dashboard views
+*   DuckDB Table Viewer: Live relational browser with per-row delete and unhide actions
+*   Interactive CI Dashboard: Per-project test/lint status bar with collapsible stdout output trays
+*   Activity Audit Timeline: 06\_TIMELINE tab in project dashboard with scrollable event feed
+*   CLI `project delete` subcommand with cascade-deletion transactions
+*   API authentication key system with auto-generation and settings panel management
+*   Database truncation with 2-step confirmation dialog and re-seed of defaults
+
+**Visual & UX:**
+
+*   5 premium visual themes (Neuron, Dracula, Nord, Cyberpunk 2077, GitHub Developer) with dark/light modes
+*   10 configurable monospace typefaces (JetBrains Mono, Fira Code, etc.) with live font switching
+*   Configurable editor and markdown preview font sizes (11px–17px)
+*   Enhanced hide/unhide project UX with EyeOff icons and dedicated settings restore panel
+*   Full-width responsive panels for API playground, documentation reader, and system settings
+*   Code block copy-on-hover button with clipboard flash feedback
+*   Auto-scroll command palette navigation for keyboard traversal
+*   Refined provisioning scene with 50/50 full-width split layout
+*   Sidebar footer version badge (NEURON:v1.5.0) and consolidated diagnostic status rows
+
+**Backend Hardening:**
+
+*   HTTP security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+*   Server read/write/idle timeouts (10s / 30s / 120s)
+*   Git sub-commands wrapped with exec.CommandContext timeouts
+*   Browser open URL scheme validation
+*   Graceful HTTP shutdown with connection draining and DuckDB lock release
+*   PID process name validation in stop daemon
+*   Activity log error propagation to stderr
+*   Content size limits on plan/rules POST endpoints
+*   MCP config file backup before overwrite
+
+<details>
+<summary><b>Older Releases</b></summary>
+
 ### v1.4.0 (2026-06-25)
-* **Interactive REST Playground**: Added `/apidocs` scene inside Web HUD enabling developer sandboxes.
-* **General Documentation Hub**: Added `/docs` sub-nav supporting SETUP, MCP, Skills, and Service installation chapters.
-* **Universal Command Palette**: Engineered global `⌘K` fuzzy-search modal.
-* **Daemon Process Manager**: Added `neuron ui --daemon` background process spawner and `neuron stop` cli terminate commands.
-* **In-App Shutdown**: Integrated secure `POST /api/system/shutdown` and setting buttons with fully disconnected overlays.
-* **Time Scale Update**: Explicitly enforced 24-hour timestamp logs everywhere in the HUD.
-* **Collapsible Terminal**: Added hide/expand toggle buttons on the terminal console panel.
-* **TUI Decommission**: Cleanly decommissioned redundant `neuron tui` subcommands, pruning all Bubble Tea / Charm libraries to reduce binary size.
+*   **Interactive REST Playground**: Added `/apidocs` scene inside Web HUD enabling developer sandboxes.
+*   **General Documentation Hub**: Added `/docs` sub-nav supporting SETUP, MCP, Skills, and Service installation chapters.
+*   **Universal Command Palette**: Engineered global `⌘K` fuzzy-search modal.
+*   **Daemon Process Manager**: Added `neuron ui --daemon` background process spawner and `neuron stop` cli terminate commands.
+*   **In-App Shutdown**: Integrated secure `POST /api/system/shutdown` and setting buttons with fully disconnected overlays.
+*   **Time Scale Update**: Explicitly enforced 24-hour timestamp logs everywhere in the HUD.
+*   **Collapsible Terminal**: Added hide/expand toggle buttons on the terminal console panel.
+*   **TUI Decommission**: Cleanly decommissioned redundant `neuron tui` subcommands, pruning all Bubble Tea / Charm libraries to reduce binary size.
 
 ### v1.3.0 (2026-06-18)
-* **Relational DuckDB Schema**: Integrated Cascade Deletion transactions (`DeleteProject`) to safely purge metadata records.
-* **Dual-TUI Rules Integration**: Standardized `.claude/skills` ──► `.agents/skills` relative symlinks.
-* **Markdown Importer**: Created split-screen `plan.md` specs editor and checklist importer.
+*   **Relational DuckDB Schema**: Integrated Cascade Deletion transactions (`DeleteProject`) to safely purge metadata records.
+*   **Dual-TUI Rules Integration**: Standardized `.claude/skills` ──► `.agents/skills` relative symlinks.
+*   **Markdown Importer**: Created split-screen `plan.md` specs editor and checklist importer.
 
 ### v1.2.0 (2026-06-10)
-* **Path-Aware Context Plane**: Made the Go server and UI dynamically filter projects using `os.Getwd()`.
+*   **Path-Aware Context Plane**: Made the Go server and UI dynamically filter projects using `os.Getwd()`.
 
 ### v1.1.0 (2026-06-03)
-* **Multi-stack Support**: Scaffolded 7 tech stacks (Go, Node, HTML, PowerShell, Next.js, Python, Android).
+*   **Multi-stack Support**: Scaffolded 7 tech stacks (Go, Node, HTML, PowerShell, Next.js, Python, Android).
 
 ### v1.0.0 (2026-05-24)
-* **Initial Release**: Launched core single-binary, DuckDB database interface, and embedded Next.js Web UI.
+*   **Initial Release**: Launched core single-binary, DuckDB database interface, and embedded Next.js Web UI.
+
+</details>

@@ -16,11 +16,11 @@ var (
 	store   *storage.Storage
 	rootCmd = &cobra.Command{
 		Use:     "neuron",
-		Version: "1.4.0",
+		Version: "1.5.0",
 		Short:   "Neuron is an AI-native Lifecycle Manager for software projects",
 		Long:    `A robust CLI tool that binds conceptual specifications like plan.md to actual code implementations and manages tasks.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			srv := web.NewServer(store, 8080, "1.4.0")
+			srv := web.NewServer(store, 8080, "1.5.0")
 			return srv.Start()
 		},
 	}
