@@ -161,6 +161,27 @@ export const useNeuron = () => {
     }
   }, [darkMode]);
 
+  // Global Hotkeys: ⌘K / Ctrl+K (Fuzzy Search) & ⌘J / Ctrl+J (Collapse Terminal Console)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+        setPaletteQuery("");
+        setPaletteSelectedIndex(0);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "j") {
+        e.preventDefault();
+        setIsTerminalCollapsed((prev) => !prev);
+      }
+      if (e.key === "Escape") {
+        setShowCommandPalette(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Set API sandbox defaults on endpoint change
   useEffect(() => {
     const ep = API_ENDPOINTS[selectedApiIdx];
@@ -945,6 +966,11 @@ export const useNeuron = () => {
         label: "Toggle Visual Dark/Light Contrast",
         category: "Style Settings",
         action: () => setDarkMode((prev) => !prev),
+      },
+      {
+        label: "Open Neuron GitHub Repository",
+        category: "Source Code",
+        action: () => window.open("https://github.com/mojoaar/neuron", "_blank"),
       },
     ];
 

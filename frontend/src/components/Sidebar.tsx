@@ -8,7 +8,8 @@ import {
   Trash, 
   AlertTriangle, 
   Sun, 
-  Moon 
+  Moon,
+  Github
 } from "lucide-react";
 import { Project } from "../types";
 import { TechIcon } from "./TechIcon";
@@ -67,12 +68,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               [ NEURON_HUD ]
             </span>
           </button>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text shrink-0"
-          >
-            {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-          </button>
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <button
+              onClick={() => window.open("https://github.com/mojoaar/neuron", "_blank")}
+              className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
+              title="Open GitHub Repository"
+            >
+              <Github className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
+              title="Toggle Dark/Light Mode"
+            >
+              {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
 
         {/* Clickable search button */}
