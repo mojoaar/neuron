@@ -191,7 +191,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
               <textarea
                 value={tmplAgents}
                 onChange={(e) => setTmplAgents(e.target.value)}
-                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
+                style={{ fontSize: tabEditorFontSize }}
+                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
             <div className="space-y-1">
@@ -199,7 +200,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
               <textarea
                 value={tmplPlan}
                 onChange={(e) => setTmplPlan(e.target.value)}
-                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 text-[10px] font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
+                style={{ fontSize: tabEditorFontSize }}
+                className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
           </div>

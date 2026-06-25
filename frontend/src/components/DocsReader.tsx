@@ -12,6 +12,7 @@ import { MarkdownRenderer } from "./MarkdownRenderer";
 interface DocsReaderProps {
   selectedDocSlug: "started" | "mcp" | "skills" | "taskboard" | "service";
   setSelectedDocSlug: (slug: "started" | "mcp" | "skills" | "taskboard" | "service") => void;
+  tabEditorFontSize: string;
 }
 
 const DOC_CHAPTERS = [
@@ -25,6 +26,7 @@ const DOC_CHAPTERS = [
 export const DocsReader: React.FC<DocsReaderProps> = ({
   selectedDocSlug,
   setSelectedDocSlug,
+  tabEditorFontSize,
 }) => {
   const currentChapter = DOC_CHAPTERS.find((ch) => ch.slug === selectedDocSlug);
 
@@ -59,7 +61,7 @@ export const DocsReader: React.FC<DocsReaderProps> = ({
       <div className="flex-1 p-6 overflow-y-auto max-w-3xl mx-auto w-full">
         {currentChapter ? (
           <div className="border border-terminal-border bg-terminal-dark rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-            <MarkdownRenderer content={currentChapter.data} />
+            <MarkdownRenderer content={currentChapter.data} style={{ fontSize: tabEditorFontSize }} />
           </div>
         ) : (
           <div className="text-center p-8 text-terminal-muted italic">

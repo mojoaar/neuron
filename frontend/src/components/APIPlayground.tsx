@@ -15,6 +15,7 @@ interface APIPlaygroundProps {
   apiResTime: string;
   isSendingApi: boolean;
   onRunApiRequest: () => void;
+  tabEditorFontSize: string;
 }
 
 export const APIPlayground: React.FC<APIPlaygroundProps> = ({
@@ -29,6 +30,7 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
   apiResTime,
   isSendingApi,
   onRunApiRequest,
+  tabEditorFontSize,
 }) => {
   return (
     <div className="flex-1 overflow-hidden flex font-mono">
@@ -97,7 +99,8 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
                         type="text"
                         value={apiInputs[key]}
                         onChange={(e) => setApiInputs({ ...apiInputs, [key]: e.target.value })}
-                        className="w-full bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1 text-xs outline-none focus:border-terminal-green"
+                        style={{ fontSize: tabEditorFontSize }}
+                        className="w-full bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1 outline-none focus:border-terminal-green"
                       />
                     </div>
                   ))}
@@ -112,7 +115,8 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
                 <textarea
                   value={apiRequestBody}
                   onChange={(e) => setApiRequestBody(e.target.value)}
-                  className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 text-[11px] font-mono outline-none focus:border-terminal-green leading-relaxed"
+                  style={{ fontSize: tabEditorFontSize }}
+                  className="w-full h-44 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 font-mono outline-none focus:border-terminal-green leading-relaxed"
                 />
               </div>
             )}
@@ -140,7 +144,10 @@ export const APIPlayground: React.FC<APIPlaygroundProps> = ({
               </div>
             </div>
 
-            <pre className="flex-1 bg-terminal-black border border-terminal-border rounded p-4 text-[10px] text-terminal-green font-mono overflow-auto leading-relaxed max-h-96">
+            <pre 
+              style={{ fontSize: tabEditorFontSize }}
+              className="flex-1 bg-terminal-black border border-terminal-border rounded p-4 text-terminal-green font-mono overflow-auto leading-relaxed max-h-96"
+            >
               <code>{apiResponse}</code>
             </pre>
           </div>

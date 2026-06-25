@@ -60,6 +60,7 @@ export default function Page() {
             <DocsReader
               selectedDocSlug={state.selectedDocSlug}
               setSelectedDocSlug={state.setSelectedDocSlug}
+              tabEditorFontSize={state.tabEditorFontSize}
             />
           ) : state.showApiDocs ? (
             <APIPlayground
@@ -74,6 +75,7 @@ export default function Page() {
               apiResTime={state.apiResTime}
               isSendingApi={state.isSendingApi}
               onRunApiRequest={state.handleRunApiRequest}
+              tabEditorFontSize={state.tabEditorFontSize}
             />
           ) : state.showDbViewer ? (
             <DbTableBrowser />
