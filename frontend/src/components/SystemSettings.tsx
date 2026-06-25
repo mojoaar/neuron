@@ -190,24 +190,6 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
           </label>
         </div>
 
-        {/* Configurable tab editor font size setting */}
-        <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
-          <div className="space-y-0.5">
-            <div className="text-xs font-bold text-terminal-text">[ Tab Editors & Previews Font Size ]</div>
-            <p className="text-[10px] text-terminal-muted leading-relaxed">Adjust the terminal-dark font size used inside your Plan, Agent Rules, and Markdown Preview panels.</p>
-          </div>
-          <select
-            value={tabEditorFontSize}
-            onChange={(e) => onSetTabEditorFontSize(e.target.value)}
-            className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold cursor-pointer"
-          >
-            <option value="11px">11px (Default)</option>
-            <option value="13px">13px</option>
-            <option value="15px">15px</option>
-            <option value="17px">17px</option>
-          </select>
-        </div>
-
         {/* Toggle enable project clusters setting */}
         <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
           <div className="space-y-0.5">
@@ -333,6 +315,24 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
               {FONTS.map((f) => (
                 <option key={f.id} value={f.id}>{f.label}</option>
               ))}
+            </select>
+          </div>
+
+          {/* Configurable tab editor font size setting */}
+          <div className="border-t border-terminal-border/25 pt-4 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-terminal-text">[ Tab Editors & Previews Font Size ]</div>
+              <p className="text-[10px] text-terminal-muted leading-relaxed">Adjust the editor and preview font size inside your Plan, Agent Rules, and Markdown panels.</p>
+            </div>
+            <select
+              value={tabEditorFontSize}
+              onChange={(e) => onSetTabEditorFontSize(e.target.value)}
+              className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold cursor-pointer"
+            >
+              <option value="11px">11px (Default)</option>
+              <option value="13px">13px</option>
+              <option value="15px">15px</option>
+              <option value="17px">17px</option>
             </select>
           </div>
         </div>
