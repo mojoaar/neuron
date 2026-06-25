@@ -67,6 +67,7 @@ export const useNeuron = () => {
 
   // Recommended skills Catalog state
   const [catalogSkills, setCatalogSkills] = useState<CatalogSkill[]>([]);
+  const [customStackLabels, setCustomStackLabels] = useState<Record<string, string>>({});
   const [isAddingCatalogSkill, setIsAddingCatalogSkill] = useState(false);
   const [newCatUrl, setNewCatUrl] = useState("");
   const [newCatLabel, setNewCatLabel] = useState("");
@@ -257,6 +258,7 @@ export const useNeuron = () => {
     fetchClusterSettings();
     fetchCiSettings();
     fetchThemeSettings();
+    fetchCustomStackLabels();
     fetchClusters();
     fetchDiscoveredDirs();
     fetchProjects(true);
@@ -617,6 +619,68 @@ export const useNeuron = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleTruncateDatabase = async () => {
+    addLog(`Purging all DuckDB relational catalog data...`, "system");
+    try {
+      const res = await fetch("/api/system/db/truncate", { method: "POST" });
+      if (res.ok) {
+        addLog("SUCCESS: All tables truncated and default catalogs re-seeded from system templates.", "success");
+        setSelectedProject(null);
+        fetchProjects(true);
+        fetchClusters();
+      } else {
+        const d = await res.json();
+        addLog(`Truncation failed: ${d.error}`, "error");
+      }
+    } catch (err: any) {
+      addLog(`Truncation failed: ${err.message}`, "error");
+    }
+  };
+
+  const fetchCustomStackLabels = async () => {
+    const stacks = ["go", "node", "nextjs", "html", "python", "android", "powershell"];
+    const labels: Record<string, string> = {};
+    for (const stack of stacks) {
+      try {
+        const res = await fetch(`/api/system/settings?key=tech_stack_label_${stack}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.value) labels[stack] = data.value;
+        }
+      } catch (_) { /* fallback to defaults */ }
+    }
+    setCustomStackLabels(labels);
+  };
+
+  const handleSetTechStackLabel = async (stack: string, label: string) => {
+    setCustomStackLabels((prev) => ({ ...prev, [stack]: label }));
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: `tech_stack_label_${stack}`, value: label }),
+      });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleToggleCatalogSkillChecked = async (url: string, isChecked: boolean) => {
+    setCatalogSkills((prev) => prev.map((sk) => sk.url === url ? { ...sk, is_checked: isChecked } : sk));
+    try {
+      const sk = catalogSkills.find((s) => s.url === url);
+      if (!sk) return;
+      await fetch("/api/system/skills", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: sk.url,
+          label: sk.label,
+          tech_stack: sk.tech_stack,
+          is_checked: isChecked,
+        }),
+      });
+    } catch (err) { console.error(err); }
   };
 
   const fetchThemeSettings = async () => {
@@ -1456,6 +1520,11 @@ export const useNeuron = () => {
     handleSetThemeName,
     handleSetThemeMode,
     handleSetFontFamily,
+    customStackLabels,
+    setCustomStackLabels,
+    handleSetTechStackLabel,
+    handleToggleCatalogSkillChecked,
+    handleTruncateDatabase,
     handleSetTabEditorFontSize,
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,

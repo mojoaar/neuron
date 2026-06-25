@@ -140,6 +140,14 @@ export default function Page() {
               onSetThemeMode={state.handleSetThemeMode}
               fontFamily={state.fontFamily}
               onSetFontFamily={state.handleSetFontFamily}
+              customStackLabels={state.customStackLabels}
+              onSetTechStackLabel={state.handleSetTechStackLabel}
+              onToggleCatalogSkillChecked={state.handleToggleCatalogSkillChecked}
+              onTruncateDatabase={() => {
+                state.handleTruncateDatabase();
+                state.setShowDbViewer(false);
+                state.setShowSystemSettings(false);
+              }}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard

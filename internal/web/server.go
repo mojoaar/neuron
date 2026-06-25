@@ -72,6 +72,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/discover", s.handleDiscover)
 	mux.HandleFunc("/api/system/db/tables", s.handleDbTables)
 	mux.HandleFunc("/api/system/db/table", s.handleDbTable)
+	mux.HandleFunc("/api/system/db/truncate", s.handleDbTruncate)
 	mux.HandleFunc("/api/clusters", s.handleClusters)
 	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
 
@@ -1434,6 +1435,27 @@ func (s *Server) handleDbTable(w http.ResponseWriter, r *http.Request) {
 	default:
 		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
+}
+
+func (s *Server) handleDbTruncate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	ctx := r.Context()
+	if err := s.store.TruncateAllTables(ctx); err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to truncate database: "+err.Error())
+		return
+	}
+
+	// Reset server CWD to startup default
+	s.cwd = s.startupCwd
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "All DuckDB tables purged and catalog entries re-seeded successfully.",
+	})
 }
 
 func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request) {

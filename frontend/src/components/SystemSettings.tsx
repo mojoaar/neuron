@@ -11,9 +11,11 @@ import {
   Monitor,
   Sun,
   Moon,
-  Type
+  Type,
+  AlertTriangle
 } from "lucide-react";
 import { SystemTemplate, CatalogSkill, Project, ThemeName, ThemeMode, FontFamily, THEMES, FONTS } from "../types";
+import { TECH_STACKS } from "../lib/techstack";
 import { TechIcon } from "./TechIcon";
 
 interface SystemSettingsProps {
@@ -64,6 +66,10 @@ interface SystemSettingsProps {
   onSetThemeMode: (val: ThemeMode) => void;
   fontFamily: FontFamily;
   onSetFontFamily: (val: FontFamily) => void;
+  customStackLabels: Record<string, string>;
+  onSetTechStackLabel: (stack: string, label: string) => void;
+  onToggleCatalogSkillChecked: (url: string, isChecked: boolean) => void;
+  onTruncateDatabase: () => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -114,7 +120,12 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onSetThemeMode,
   fontFamily,
   onSetFontFamily,
+  customStackLabels,
+  onSetTechStackLabel,
+  onToggleCatalogSkillChecked,
+  onTruncateDatabase,
 }) => {
+  const [confirmTruncate, setConfirmTruncate] = React.useState(false);
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 w-full font-mono">
       {/* Scope Settings */}
@@ -335,14 +346,25 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
               onChange={(e) => setSelectedTemplateTech(e.target.value)}
               className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1 text-xs outline-none font-bold"
             >
-              <option value="go">Go (Golang)</option>
-              <option value="node">Node (JavaScript)</option>
-              <option value="nextjs">Next.js (React)</option>
-              <option value="html">HTML (Static)</option>
-              <option value="python">Python (General)</option>
-              <option value="android">Android (Kotlin)</option>
-              <option value="powershell">PowerShell</option>
+              {TECH_STACKS.map((ts) => (
+                <option key={ts.id} value={ts.id}>
+                  {customStackLabels[ts.id] || ts.label}
+                </option>
+              ))}
             </select>
+          </div>
+
+          {/* Editable label for the selected stack */}
+          <div className="flex items-center space-x-2 pb-2 mb-1">
+            <span className="text-[9px] font-bold text-terminal-muted uppercase shrink-0">[ Custom Label for this stack ]</span>
+            <input
+              type="text"
+              value={customStackLabels[selectedTemplateTech] || ""}
+              onChange={(e) => onSetTechStackLabel(selectedTemplateTech, e.target.value)}
+              placeholder={TECH_STACKS.find((ts) => ts.id === selectedTemplateTech)?.label || ""}
+              className="flex-1 bg-terminal-black border border-terminal-border text-terminal-text rounded px-2 py-1 text-[11px] outline-none focus:border-terminal-green"
+            />
+            <span className="text-[9px] italic text-terminal-muted">leave empty to use default</span>
           </div>
 
           <div className="space-y-4 flex-1 overflow-y-auto pr-1">
@@ -363,6 +385,41 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
                 style={{ fontSize: tabEditorFontSize }}
                 className="w-full h-96 bg-terminal-black border border-terminal-border text-terminal-text rounded p-3 font-mono outline-none focus:border-terminal-green leading-relaxed scrollbar-thin scrollbar-thumb-terminal-border"
               />
+            </div>
+          </div>
+
+          {/* Filtered Recommended Skills for Selected Stack */}
+          <div className="border-t border-terminal-border/30 pt-4 mt-4">
+            <div className="text-[10px] font-bold text-terminal-green uppercase mb-3">
+              [ Recommended Skills for {TECH_STACKS.find((ts) => ts.id === selectedTemplateTech)?.label || selectedTemplateTech.toUpperCase()} ]
+            </div>
+            <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1 mb-3 scrollbar-thin scrollbar-thumb-terminal-border">
+              {catalogSkills.filter((sk) => sk.tech_stack === selectedTemplateTech || sk.tech_stack === "general").length === 0 ? (
+                <div className="text-center py-4 text-[10px] text-terminal-muted italic border border-dashed border-terminal-border rounded bg-terminal-black/20">
+                  No recommended skills registered for this stack.
+                </div>
+              ) : (
+                catalogSkills.filter((sk) => sk.tech_stack === selectedTemplateTech || sk.tech_stack === "general").map((sk) => (
+                  <div key={sk.url} className="flex items-center justify-between p-2 bg-terminal-black border border-terminal-border rounded text-[11px] group">
+                    <label className="flex items-center space-x-2.5 min-w-0 flex-1 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={sk.is_checked}
+                        onChange={(e) => onToggleCatalogSkillChecked(sk.url, e.target.checked)}
+                        className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0 w-3.5 h-3.5 cursor-pointer shrink-0"
+                      />
+                      <span className="font-bold text-terminal-text truncate">{sk.label}</span>
+                      <span className="text-[8px] text-terminal-muted font-mono hidden group-hover:inline truncate">{sk.url}</span>
+                    </label>
+                    <button
+                      onClick={() => onDeleteCatalogSkill(sk.url, sk.label)}
+                      className="p-0.5 rounded text-terminal-muted hover:text-red-500 shrink-0"
+                    >
+                      <Trash className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -492,6 +549,55 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             )}
           </div>
         </div>
+
+      {/* Danger Zone: Truncate All Database Tables */}
+      <div className="border border-red-950/60 bg-red-950/5 rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-red-500 border-b border-red-950/30 pb-2.5 mb-4">
+          <AlertTriangle className="w-4 h-4 animate-pulse" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ Danger Zone: Truncate Full Database ]</h2>
+        </div>
+
+        {confirmTruncate ? (
+          <div className="space-y-3">
+            <p className="text-[11px] text-terminal-muted leading-relaxed">
+              This action will permanently delete <strong className="text-red-500">ALL data</strong> from every table in the DuckDB catalog:
+              <code className="text-[10px] block mt-1 text-red-400 font-mono bg-terminal-black border border-red-950/40 rounded p-2 leading-relaxed">
+                projects · tasks · skills · clusters · cluster_projects · templates · skill_catalog · system_settings
+              </code>
+              System defaults and recommended skills catalog will be automatically re-seeded. <strong className="text-terminal-text">This cannot be undone.</strong>
+            </p>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onTruncateDatabase}
+                className="py-1.5 px-4 rounded bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase flex items-center space-x-1.5 transition-all"
+              >
+                <Trash className="w-3.5 h-3.5" />
+                <span>CONFIRM: Truncate Everything</span>
+              </button>
+              <button
+                onClick={() => setConfirmTruncate(false)}
+                className="py-1.5 px-4 rounded border border-terminal-border text-terminal-muted hover:text-terminal-text text-xs uppercase font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-terminal-muted leading-relaxed flex-1 mr-4">
+              Purge all projects, tasks, skills, clusters, settings, and re-seed default template and skill catalog entries from scratch.
+            </p>
+            <button
+              onClick={() => setConfirmTruncate(true)}
+              className="py-1.5 px-4 rounded border border-red-950 hover:border-red-500 bg-red-950/20 hover:bg-red-500/10 text-red-500 font-bold text-xs uppercase whitespace-nowrap transition-all flex items-center space-x-1.5"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+              <span>Truncate Database</span>
+            </button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

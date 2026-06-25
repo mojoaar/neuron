@@ -995,3 +995,34 @@ func (s *Storage) ListClusterProjects(ctx context.Context, clusterID string) ([]
 	}
 	return list, nil
 }
+
+// TruncateAllTables purges ALL data from every user table and re-seeds default catalog entries.
+func (s *Storage) TruncateAllTables(ctx context.Context) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	tables := []string{
+		"cluster_projects",
+		"tasks",
+		"skills",
+		"clusters",
+		"projects",
+		"templates",
+		"skill_catalog",
+		"system_settings",
+	}
+	for _, t := range tables {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM "+t+";"); err != nil {
+			return fmt.Errorf("failed to truncate table %s: %w", t, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return s.prepopulateSystemTables()
+}
