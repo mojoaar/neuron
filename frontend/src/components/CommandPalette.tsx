@@ -54,6 +54,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         if (visible.length > 0) {
           onSelectOption(paletteSelectedIndex);
         }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setShowCommandPalette(false);
       }
     };
 
