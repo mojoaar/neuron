@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"neuron/internal/export"
@@ -31,6 +32,7 @@ type Server struct {
 	cwd        string
 	startupCwd string
 	httpServer *http.Server
+	mu         sync.RWMutex
 }
 
 func NewServer(store *storage.Storage, port int) *Server {
@@ -78,11 +80,21 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/clusters", s.handleClusters)
 	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
 
+	// Security headers middleware — wraps the main mux to set baseline response headers
+	securityHeaders := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("Referrer-Policy", "same-origin")
+			next.ServeHTTP(w, r)
+		})
+	}
+
 	// Embed static client
 	sub, err := fs.Sub(frontendFS, "frontend/out")
 	if err != nil {
-		// If frontend/out is empty during development, fallback
-		sub = fs.FS(nil)
+		// If frontend/out is empty during development, serve a minimal placeholder
+		sub = nil
 	}
 
 	var indexHTML []byte
@@ -90,9 +102,16 @@ func (s *Server) Start() error {
 		indexHTML, _ = fs.ReadFile(sub, "index.html")
 	}
 
-	fileServer := http.FileServer(http.FS(sub))
+	var fileServer http.Handler
+	if sub != nil {
+		fileServer = http.FileServer(http.FS(sub))
+	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if sub == nil {
+			http.Error(w, "Frontend assets not compiled. Run 'make build' first.", http.StatusNotFound)
+			return
+		}
 		if strings.HasPrefix(r.URL.Path, "/api") {
 			http.NotFound(w, r)
 			return
@@ -125,8 +144,11 @@ func (s *Server) Start() error {
 	}()
 
 	s.httpServer = &http.Server{
-		Addr:    addr,
-		Handler: mux,
+		Addr:         addr,
+		Handler:      securityHeaders(mux),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 	return s.httpServer.ListenAndServe()
 }
@@ -772,24 +794,27 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+		gitCtx, gitCancel := context.WithTimeout(ctx, 15*time.Second)
+		defer gitCancel()
+
+		cmd := exec.CommandContext(gitCtx, "git", "rev-parse", "--is-inside-work-tree")
 		cmd.Dir = proj.Path
 		if err := cmd.Run(); err != nil {
 			respondJSON(w, http.StatusOK, map[string]interface{}{"is_repo": false})
 			return
 		}
 
-		branchCmd := exec.Command("git", "branch", "--show-current")
+		branchCmd := exec.CommandContext(gitCtx, "git", "branch", "--show-current")
 		branchCmd.Dir = proj.Path
 		branchBytes, _ := branchCmd.Output()
 		branchName := strings.TrimSpace(string(branchBytes))
 
-		commitCmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+		commitCmd := exec.CommandContext(gitCtx, "git", "rev-parse", "--short", "HEAD")
 		commitCmd.Dir = proj.Path
 		commitBytes, _ := commitCmd.Output()
 		commitHash := strings.TrimSpace(string(commitBytes))
 
-		statusCmd := exec.Command("git", "status", "--porcelain")
+		statusCmd := exec.CommandContext(gitCtx, "git", "status", "--porcelain")
 		statusCmd.Dir = proj.Path
 		statusBytes, _ := statusCmd.Output()
 		statusLines := strings.Split(strings.TrimSpace(string(statusBytes)), "\n")
@@ -886,6 +911,11 @@ func respondError(w http.ResponseWriter, code int, message string) {
 }
 
 func openBrowser(url string) {
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		fmt.Printf("Warning: refusing to open non-http URL in browser: %s\n", url)
+		return
+	}
+
 	var cmd string
 	var args []string
 

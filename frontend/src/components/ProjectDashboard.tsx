@@ -699,8 +699,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   No activity recorded yet. Start provisioning and managing your projects to see events here!
                 </div>
               ) : (
-                activityEntries.map((entry) => (
-                  <div key={entry.id} className="flex items-start space-x-2.5 p-2.5 bg-terminal-black border border-terminal-border rounded text-xs">
+                activityEntries.map((entry, idx) => (
+                  <div key={entry.created_at + entry.entity_type + entry.entity_id + idx} className="flex items-start space-x-2.5 p-2.5 bg-terminal-black border border-terminal-border rounded text-xs">
                     <div className="text-[9px] text-terminal-muted font-mono shrink-0 w-16 text-right">
                       {new Date(entry.created_at).toLocaleTimeString(undefined, { hour12: false })}
                     </div>

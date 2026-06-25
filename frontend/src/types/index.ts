@@ -82,7 +82,6 @@ export interface CheckStatus {
 }
 
 export interface ActivityEntry {
-  id: number;
   entity_type: string;
   entity_id: string;
   project_id?: string;

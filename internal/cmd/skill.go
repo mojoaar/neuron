@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"neuron/internal/export"
 	"neuron/internal/storage"
@@ -25,7 +26,8 @@ var (
 		Short: "List all skills registered for a project",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			projectID := args[0]
 
 			_, err := store.GetProject(ctx, projectID)
@@ -57,7 +59,8 @@ var (
 		Short: "Register a new conceptual skill mapping to a codebase path",
 		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			projectID := args[0]
 			skillID := args[1]
 			name := args[2]
@@ -97,7 +100,8 @@ var (
 		Short: "Export registered database skills to standard task-runner files (Makefile or package.json)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			projectID := args[0]
 
 			proj, err := store.GetProject(ctx, projectID)

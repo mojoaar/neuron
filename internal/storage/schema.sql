@@ -69,7 +69,6 @@ CREATE TABLE IF NOT EXISTS cluster_projects (
 );
 
 CREATE TABLE IF NOT EXISTS activity_log (
-    id INTEGER PRIMARY KEY,
     entity_type VARCHAR NOT NULL,
     entity_id VARCHAR NOT NULL,
     project_id VARCHAR,

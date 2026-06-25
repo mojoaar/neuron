@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"neuron/internal/export"
 	"neuron/internal/scaffold"
@@ -63,7 +64,8 @@ var (
 
 			fmt.Printf("Scaffolding %s project in %s...\n", tech, absPath)
 
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			tmpl, err := store.GetTemplate(ctx, tech)
 			var agentsTemplate, planTemplate string
 			if err == nil {

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -1044,7 +1045,6 @@ func (s *Storage) TruncateAllTables(ctx context.Context) error {
 
 // ActivityLogEntry represents a single record in the activity_log table.
 type ActivityLogEntry struct {
-	ID         int       `json:"id"`
 	EntityType string    `json:"entity_type"`
 	EntityID   string    `json:"entity_id"`
 	ProjectID  string    `json:"project_id,omitempty"`
@@ -1055,15 +1055,17 @@ type ActivityLogEntry struct {
 
 // LogActivity inserts a new entry into the activity_log table.
 func (s *Storage) LogActivity(ctx context.Context, entityType, entityID, projectID, action, label string) {
-	_, _ = s.db.ExecContext(ctx, `
+	if _, err := s.db.ExecContext(ctx, `
 		INSERT INTO activity_log (entity_type, entity_id, project_id, action, label, created_at)
 		VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
-	`, entityType, entityID, projectID, action, label)
+	`, entityType, entityID, projectID, action, label); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to log activity (%s %s %s): %v\n", entityType, action, entityID, err)
+	}
 }
 
 // ListActivity retrieves recent activity log entries, limited to a given maximum count.
 func (s *Storage) ListActivity(ctx context.Context, limit int) ([]*ActivityLogEntry, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id, entity_type, entity_id, project_id, action, label, created_at FROM activity_log ORDER BY id DESC LIMIT ?;", limit)
+	rows, err := s.db.QueryContext(ctx, "SELECT entity_type, entity_id, project_id, action, label, created_at FROM activity_log ORDER BY created_at DESC LIMIT ?;", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -1072,14 +1074,7 @@ func (s *Storage) ListActivity(ctx context.Context, limit int) ([]*ActivityLogEn
 	var list []*ActivityLogEntry
 	for rows.Next() {
 		e := &ActivityLogEntry{}
-		var projID, lbl *string
-		if err := rows.Scan(&e.ID, &e.EntityType, &e.EntityID, &projID, &e.Action, &lbl, &e.CreatedAt); err == nil {
-			if projID != nil {
-				e.ProjectID = *projID
-			}
-			if lbl != nil {
-				e.Label = *lbl
-			}
+		if err := rows.Scan(&e.EntityType, &e.EntityID, &e.ProjectID, &e.Action, &e.Label, &e.CreatedAt); err == nil {
 			list = append(list, e)
 		}
 	}

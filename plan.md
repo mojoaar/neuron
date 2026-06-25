@@ -8,43 +8,77 @@ Develop a single-binary workspace lifecycle manager and JSON-RPC MCP server with
 
 ---
 
-## 🔍 Code Review & Architectural Analysis (June 2026)
+## 🔍 Code Review & Architectural Analysis (June 2025)
 
-### 1. Code Quality Findings
-*   **Monolithic Frontend Component**: `frontend/src/app/page.tsx` was a massive 3,432-line single React component managing 46+ separate states and complex REST fetching hooks under one scope. Requires modularization and decomposition into separate components, React Hooks, and a dedicated service layer.
-*   **Duplicate Script Exporters**: Identical implementation of `exportToGoMakefile` and `exportToNodePackageJSON` resided in both `internal/cmd/skill.go` and `internal/web/server.go`. Needs consolidation into a single helper module.
-*   **Repeated Tech-Stack Mapping**: The list of 7 technical stacks is repeated in 5 separate validation/logic locations in both backend and frontend.
+### Round 1 Findings (Completed: P0-P3, all 18 items)
 
-### 2. Security & Penetration Findings
-*   **XSS Vulnerability (P0)**: Hand-rolled line-by-line Markdown compiler (`renderMarkdown`) rendered plans directly into HTML via `dangerouslySetInnerHTML`. Lacked proper HTML attribute escaping, allowing malicious event triggers (`onerror`, `onclick`) or standard `javascript:` URL injection paths.
-*   **Unvalidated Remote File Execution**: The custom Skills downloader downloads templates directly from `agentskill.sh` and writes files to user workspace locations with no size boundaries, path-traversal sanitization, or file whitelists.
-*   **PID File Terminations**: The PID stop daemon checks PIDs blindly without confirming the target process name is actually `neuron`, creating theoretical local process namespace termination collisions.
+| Priority | Items | Status |
+| -------- | ----- | ------ |
+| P0       | XSS fix, component decomposition | Done |
+| P1       | Skill validation, exporter merge, tech stack registry | Done |
+| P2       | CLI delete, clusters, CI dashboard | Done |
+| P3       | Tests, timeline, auth, plugins | Done (3/4) |
+| Low      | Error swallowing, task lookup, shutdown, PID, go.mod | Done (5/5) |
 
-### 3. Deprecated & Outdated Package Analysis
-*   **Unusual Go Compiler Declaration**: `go.mod` declared forward-looking `go 1.26.4`. Standard stable toolchains are at `1.24` as of early 2026.
-*   **Outdated Roadmap Documents**: The `plan.md` and `README.md` documents referenced Bubble Tea TUI command lists, which were decommissioned in v1.4.0.
+### Round 2 Findings (June 2026) — Current Backlog
+
+#### 🔴 Critical
+*   **C1 — API Key Auth is Hollow**: `/api/system/api-key` generates a key but no middleware validates it. All endpoints remain unprotected.
+*   **C2 — Nil FS Panic**: When `frontend/out` is missing during development, `fs.FS(nil)` causes a runtime panic on the first file request.
+*   **C3 — Race on Server.cwd**: `Server.cwd` is read/written from multiple HTTP handler goroutines without any synchronization mutex.
+*   **C4 — No HTTP Timeouts**: `http.Server` has no `ReadTimeout`, `WriteTimeout`, or `IdleTimeout`, making the server vulnerable to Slowloris.
+
+#### 🟠 High
+*   **H1 — Missing Security Headers**: No CSP, `X-Content-Type-Options`, `X-Frame-Options`, or CORS headers on any response.
+*   **H2 — Unused npm Dependencies**: `clsx`, `motion`, and `tailwind-merge` are never imported but bloat the bundle.
+*   **H3 — Hardcoded Colors Bypass Themes**: 35+ occurrences of `text-red-500`, `text-yellow-500`, `text-[#00ffff]` across 8 components that don't adapt to theme changes.
+*   **H4 — Scanning Grid Hardcoded Green**: Background grid in `page.tsx:22` uses `rgba(0,255,102,0.015)` which stays green regardless of selected theme.
+*   **H5 — Monolithic 1,590-line Hook**: `useNeuron.ts` bundles 60+ states, 40+ handlers, and 12 effects in a single file.
+*   **H6 — Race on DbTableBrowser Unhide**: `setTimeout(() => fetchTableData(...), 100)` — race between API call and data refresh.
+
+#### 🟡 Medium
+*   **M1 — Git exec Without Timeouts**: Git sub-commands in `server.go` use `exec.Command` not `exec.CommandContext`, could hang on slow network mounts.
+*   **M2 — Arg Injection in Browser Open**: URL passed directly to `open`/`xdg-open` on Windows without scheme validation.
+*   **M3 — LogActivity Errors Silently Swallowed**: `LogActivity()` discards all DB errors from 15+ call sites.
+*   **M4 — Missing FK Constraints**: `tasks.project_id` and `skills.project_id` have no `REFERENCES` or `ON DELETE CASCADE` in schema.
+*   **M5 — Unchecked Test Errors**: Multiple `store.AddProject()` calls in test setup don't verify success.
+*   **M6 — 41 Silent console.error Calls**: API failure catch blocks only `console.error` without user-facing `addLog`.
+*   **M7 — TOCTOU Race in stop.go**: PID is checked for being a neuron process, then killed later — PID can recycle between.
+*   **M8 — `any[][]` DB Row Type**: `DbTableData.rows` is typed as `any` — bypasses TypeScript safety.
+*   **M9 — Fragile Column Indexing**: `DbTableBrowser` assumes project ID is always `row[0]`.
+*   **M10 — window.confirm() in ClusterDashboard**: Native browser dialog clashes with terminal dark theme style.
 
 ---
 
-## 🗺️ Roadmap & Prioritized Backlog
+## 🗺️ Phased Implementation Plan
 
-### P0: Architecture & Core Refinement (In Progress)
-*   [ ] **P0-A: Secure Markdown Rendering**: Eradicate the custom parser and compile Next.js with verified, sanitized standard libraries (`react-markdown` + `rehype-sanitize`).
-*   [ ] **P0-B: Component Decomposition & Modularization**: Split the 3,400+ line `page.tsx` React component into separate modular folders:
-    *   `/components` (Sidebar, Settings, Terminal, ProjectDashboard, Sandbox, DocReader)
-    *   `/hooks` (isolated states for tasks, skills, projects, logging, sandbox, command palette)
-    *   `/services` (unified REST fetch controller)
-    *   `/types` (consolidated TypeScript definitions)
+### Phase 1: Quick Security & Stability (10 items)
+*   [ ] **C2: Fix nil FS panic** — Replace `fs.FS(nil)` with a safe fallback
+*   [ ] **C3: Add mutex on Server.cwd** — `sync.RWMutex` for goroutine-safe access
+*   [ ] **C4: Add HTTP timeouts** — ReadTimeout 10s, WriteTimeout 30s, IdleTimeout 120s
+*   [ ] **H2: Remove unused npm deps** — Uninstall clsx, motion, tailwind-merge
+*   [ ] **H1: Security headers middleware** — CSP, X-Content-Type-Options, X-Frame-Options
+*   [ ] **M3: LogActivity error propagation** — Return error from LogActivity, log to stderr
+*   [ ] **M1: exec.CommandContext for git** — Add timeouts to all git sub-commands
+*   [ ] **M2: Validate browser open URL** — Ensure URL starts with http(s)://
+*   [ ] **M5: Check test setup errors** — Add t.Fatalf on all unchecked store calls
+*   [ ] **M10: Add context timeouts to CLI** — Wrap CLI context.Background() with 30s timeouts
 
-### P1: Security Hardening & Consolidation
-*   [ ] **P1-A: Skill Download Verification**: Sandboxing of remote downloads. Validate content boundaries, deny path-traversal slugs (`../`), and reject non-plaintext files.
-*   [ ] **P1-B: Duplicate Exporters Merger**: Refactor command and web exporters into a shared Go package.
-*   [ ] **P1-C: Tech Stack Single Source of Truth**: Centralize tech stack definitions inside an internal Go registry package.
+### Phase 2: Theme Consistency (1 item)
+*   [ ] **H3/H4: Theme-ify all hardcoded colors** — Replace 35+ raw Tailwind colors with `text-terminal-*` tokens; fix green grid to use CSS custom properties
 
-### P2: High-Value Features
-*   [ ] **P2-A: CLI Project Deletion**: Implement the missing `neuron project delete` subcommand in Go.
-*   [ ] **P2-B: Multi-Project Clusters**: Allow grouping and scanning related folders into Clusters for bulk overview tracking.
-*   [ ] **P2-C: HUD Testing Dashboard**: Visual aggregate output of test suites inside the project HUD console.
+### Phase 3: Frontend Bug Fixes (5 items)
+*   [ ] **H6: Fix DbTableBrowser race on unhide** — Use proper async/await instead of setTimeout
+*   [ ] **M9: Fix fragile column indexing** — Use `columns.indexOf("id")` instead of `row[0]`
+*   [ ] **H5 (partial): Wrap palette options in useCallback** — Prevent identity change on every render
+*   [ ] **M6: Add addLog to silent catch blocks** — User-visible error messages for 41 catch blocks
+*   [ ] **M10: Replace window.confirm()** — Themed inline confirmation in ClusterDashboard
+
+### Phase 4: Code Cleanup (4 items)
+*   [ ] **M8: Proper React keys** — Replace array index keys with unique identifiers
+*   [ ] **M7: Fix TOCTOU in stop.go** — Use /proc/<pid>/cmdline directly instead of ps
+*   [ ] **M4: Add FK constraints to schema** — REFERENCES + ON DELETE CASCADE
+*   [ ] **Cleanup: Types, kbd font, DocsReader as any** — Type safety improvements
 
 ---
 
@@ -52,4 +86,8 @@ Develop a single-binary workspace lifecycle manager and JSON-RPC MCP server with
 *   Run local asset pipeline and static export compilation:
     ```bash
     make build
+    ```
+*   Run Go unit tests:
+    ```bash
+    make test
     ```

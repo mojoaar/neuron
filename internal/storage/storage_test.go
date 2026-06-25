@@ -148,8 +148,12 @@ func TestDeleteSkill(t *testing.T) {
 	}
 	defer store.Close()
 
-	store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"})
-	store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "skill1", ExecutionType: "script", ExecutionPath: "./run.sh"})
+	if err := store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"}); err != nil {
+		t.Fatalf("AddProject failed: %v", err)
+	}
+	if err := store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "skill1", ExecutionType: "script", ExecutionPath: "./run.sh"}); err != nil {
+		t.Fatalf("AddSkill failed: %v", err)
+	}
 
 	if err := store.DeleteSkill(ctx, "s1"); err != nil {
 		t.Fatalf("DeleteSkill failed: %v", err)
@@ -169,8 +173,12 @@ func TestUpdateSkill(t *testing.T) {
 	}
 	defer store.Close()
 
-	store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"})
-	store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "old", ExecutionType: "script", ExecutionPath: "./old.sh"})
+	if err := store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"}); err != nil {
+		t.Fatalf("AddProject failed: %v", err)
+	}
+	if err := store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "old", ExecutionType: "script", ExecutionPath: "./old.sh"}); err != nil {
+		t.Fatalf("AddSkill failed: %v", err)
+	}
 
 	skill := &Skill{ID: "s1", Name: "new", ExecutionPath: "./new.sh"}
 	if err := store.UpdateSkill(ctx, skill); err != nil {
@@ -191,9 +199,15 @@ func TestDeleteProject(t *testing.T) {
 	}
 	defer store.Close()
 
-	store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"})
-	store.AddTask(ctx, &Task{ID: "t1", ProjectID: "proj", Content: "task1", Status: "pending", Priority: "low"})
-	store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "skill1", ExecutionType: "script", ExecutionPath: "./run.sh"})
+	if err := store.AddProject(ctx, &Project{ID: "proj", Name: "P", Path: "/p", TechStack: "go"}); err != nil {
+		t.Fatalf("AddProject failed: %v", err)
+	}
+	if err := store.AddTask(ctx, &Task{ID: "t1", ProjectID: "proj", Content: "task1", Status: "pending", Priority: "low"}); err != nil {
+		t.Fatalf("AddTask failed: %v", err)
+	}
+	if err := store.AddSkill(ctx, &Skill{ID: "s1", ProjectID: "proj", Name: "skill1", ExecutionType: "script", ExecutionPath: "./run.sh"}); err != nil {
+		t.Fatalf("AddSkill failed: %v", err)
+	}
 
 	if err := store.DeleteProject(ctx, "proj"); err != nil {
 		t.Fatalf("DeleteProject failed: %v", err)
@@ -221,8 +235,12 @@ func TestListProjects(t *testing.T) {
 	}
 	defer store.Close()
 
-	store.AddProject(ctx, &Project{ID: "a", Name: "A", Path: "/a", TechStack: "go"})
-	store.AddProject(ctx, &Project{ID: "b", Name: "B", Path: "/b", TechStack: "node"})
+	if err := store.AddProject(ctx, &Project{ID: "a", Name: "A", Path: "/a", TechStack: "go"}); err != nil {
+		t.Fatalf("AddProject failed: %v", err)
+	}
+	if err := store.AddProject(ctx, &Project{ID: "b", Name: "B", Path: "/b", TechStack: "node"}); err != nil {
+		t.Fatalf("AddProject failed: %v", err)
+	}
 
 	list, err := store.ListProjects(ctx)
 	if err != nil {
@@ -282,7 +300,9 @@ func TestClusterCRUD(t *testing.T) {
 		t.Fatalf("AddCluster failed: %v", err)
 	}
 
-	store.AddCluster(ctx, &Cluster{ID: "c2", Name: "Cluster Two"})
+	if err := store.AddCluster(ctx, &Cluster{ID: "c2", Name: "Cluster Two"}); err != nil {
+		t.Fatalf("AddCluster failed: %v", err)
+	}
 
 	clusters, err := store.ListClusters(ctx)
 	if err != nil {

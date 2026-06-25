@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"neuron/internal/storage"
 
 	"github.com/spf13/cobra"
@@ -18,7 +20,8 @@ var (
 		Use:   "list",
 		Short: "List all registered projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			projects, err := store.ListProjects(ctx)
 			if err != nil {
 				return err
@@ -43,7 +46,8 @@ var (
 		Short: "Register an existing project with Neuron",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			p := &storage.Project{
 				ID:        args[0],
 				Name:      args[1],
@@ -65,7 +69,8 @@ var (
 		Short: "Delete a registered project and all associated tasks/skills",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 			id := args[0]
 
 			proj, err := store.GetProject(ctx, id)
