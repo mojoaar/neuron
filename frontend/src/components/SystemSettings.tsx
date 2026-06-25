@@ -7,9 +7,13 @@ import {
   Plus, 
   FileCode,
   Cpu,
-  Eye
+  Eye,
+  Monitor,
+  Sun,
+  Moon,
+  Type
 } from "lucide-react";
-import { SystemTemplate, CatalogSkill, Project } from "../types";
+import { SystemTemplate, CatalogSkill, Project, ThemeName, ThemeMode, FontFamily, THEMES, FONTS } from "../types";
 import { TechIcon } from "./TechIcon";
 
 interface SystemSettingsProps {
@@ -54,6 +58,12 @@ interface SystemSettingsProps {
   onToggleEnableProjectClusters: (val: boolean) => void;
   enableVerificationCi: boolean;
   onToggleEnableVerificationCi: (val: boolean) => void;
+  themeName: ThemeName;
+  onSetThemeName: (val: ThemeName) => void;
+  themeMode: ThemeMode;
+  onSetThemeMode: (val: ThemeMode) => void;
+  fontFamily: FontFamily;
+  onSetFontFamily: (val: FontFamily) => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -98,6 +108,12 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onToggleEnableProjectClusters,
   enableVerificationCi,
   onToggleEnableVerificationCi,
+  themeName,
+  onSetThemeName,
+  themeMode,
+  onSetThemeMode,
+  fontFamily,
+  onSetFontFamily,
 }) => {
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 w-full font-mono">
@@ -238,6 +254,74 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
           </div>
         </div>
       )}
+
+      {/* Visual Theme, Mode & Typography Card */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+          <Monitor className="w-4 h-4" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ Visual Theme, Mode & Typography ]</h2>
+        </div>
+
+        <div className="space-y-4">
+          {/* Theme selector */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-terminal-text">[ Interface Theme ]</div>
+              <p className="text-[10px] text-terminal-muted leading-relaxed">Select your color palette for the terminal HUD dashboard.</p>
+            </div>
+            <select
+              value={themeName}
+              onChange={(e) => onSetThemeName(e.target.value as ThemeName)}
+              className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold cursor-pointer max-w-[220px]"
+            >
+              {THEMES.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Mode toggle */}
+          <div className="border-t border-terminal-border/25 pt-4 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-terminal-text">[ Display Mode ]</div>
+              <p className="text-[10px] text-terminal-muted leading-relaxed">Choose dark-mode or light-mode rendering for your active theme.</p>
+            </div>
+            <div className="flex items-center space-x-2 text-[10px] font-bold bg-terminal-black border border-terminal-border rounded overflow-hidden">
+              <button
+                onClick={() => onSetThemeMode("dark")}
+                className={`px-3 py-1.5 flex items-center space-x-1 transition-colors ${themeMode === "dark" ? "bg-terminal-green/10 text-terminal-green" : "text-terminal-muted hover:text-terminal-text"}`}
+              >
+                <Moon className="w-3 h-3" />
+                <span>DARK</span>
+              </button>
+              <button
+                onClick={() => onSetThemeMode("light")}
+                className={`px-3 py-1.5 flex items-center space-x-1 transition-colors ${themeMode === "light" ? "bg-terminal-green/10 text-terminal-green" : "text-terminal-muted hover:text-terminal-text"}`}
+              >
+                <Sun className="w-3 h-3" />
+                <span>LIGHT</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Font selector */}
+          <div className="border-t border-terminal-border/25 pt-4 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-terminal-text">[ Monospace Font ]</div>
+              <p className="text-[10px] text-terminal-muted leading-relaxed">Choose the monospace font family for the entire terminal HUD.</p>
+            </div>
+            <select
+              value={fontFamily}
+              onChange={(e) => onSetFontFamily(e.target.value as FontFamily)}
+              className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold cursor-pointer max-w-[220px]"
+            >
+              {FONTS.map((f) => (
+                <option key={f.id} value={f.id}>{f.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Templates Panel */}
       <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col">

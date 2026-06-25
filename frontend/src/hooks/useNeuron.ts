@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus } from "../types";
+import { Project, Task, Skill, LogLine, GitStatus, SystemTemplate, CatalogSkill, ApiEndpoint, Cluster, CheckStatus, ThemeName, ThemeMode, FontFamily, FONTS } from "../types";
 import { API_ENDPOINTS } from "../lib/endpoints";
 
 export const useNeuron = () => {
@@ -17,7 +17,9 @@ export const useNeuron = () => {
   const [isSavingScope, setIsSavingScope] = useState(false);
 
   // Theme state
-  const [darkMode, setDarkMode] = useState(true);
+  const [themeName, setThemeName] = useState<ThemeName>("neuron");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const [fontFamily, setFontFamily] = useState<FontFamily>("jetbrains-mono");
 
   // Views toggles
   const [showDocs, setShowDocs] = useState(false);
@@ -173,14 +175,42 @@ export const useNeuron = () => {
     }
   };
 
-  // Synchronize HTML Light Mode class on theme state change
+  // Synchronize HTML Theme and Mode on state change
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.remove("light");
-    } else {
+    document.documentElement.setAttribute("data-theme", themeName);
+    if (themeMode === "light") {
       document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
     }
-  }, [darkMode]);
+  }, [themeName, themeMode]);
+
+  // Inject/Remove dynamic Google Font link and CSS variable on font change
+  useEffect(() => {
+    if (fontFamily === "jetbrains-mono") {
+      document.documentElement.style.removeProperty("--font-mono");
+      return;
+    }
+    const font = FONTS.find(f => f.id === fontFamily);
+    if (!font) return;
+
+    const linkId = "neuron-dynamic-font";
+    const existing = document.getElementById(linkId);
+    if (existing) existing.remove();
+
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${font.googleFont}:wght@300;400;500;700&display=swap`;
+    document.head.appendChild(link);
+
+    document.documentElement.style.setProperty("--font-mono", `"${font.label}", var(--font-jetbrains-mono), monospace`);
+
+    return () => {
+      const el = document.getElementById(linkId);
+      if (el) el.remove();
+    };
+  }, [fontFamily]);
 
   // Global Hotkeys: ⌘K / Ctrl+K (Fuzzy Search) & ⌘J / Ctrl+J (Collapse Terminal Console)
   useEffect(() => {
@@ -226,6 +256,7 @@ export const useNeuron = () => {
     fetchTabEditorFontSize();
     fetchClusterSettings();
     fetchCiSettings();
+    fetchThemeSettings();
     fetchClusters();
     fetchDiscoveredDirs();
     fetchProjects(true);
@@ -586,6 +617,68 @@ export const useNeuron = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const fetchThemeSettings = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=theme_name");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value) setThemeName(data.value as ThemeName);
+      }
+    } catch (err) { console.error("Failed to load theme name:", err); }
+
+    try {
+      const res = await fetch("/api/system/settings?key=theme_mode");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value) setThemeMode(data.value as ThemeMode);
+      }
+    } catch (err) { console.error("Failed to load theme mode:", err); }
+
+    try {
+      const res = await fetch("/api/system/settings?key=font_family");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value) setFontFamily(data.value as FontFamily);
+      }
+    } catch (err) { console.error("Failed to load font family:", err); }
+  };
+
+  const handleSetThemeName = async (val: ThemeName) => {
+    setThemeName(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "theme_name", value: val }),
+      });
+      addLog(`SUCCESS: Visual theme switched to: ${val.toUpperCase()}`, "success");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSetThemeMode = async (val: ThemeMode) => {
+    setThemeMode(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "theme_mode", value: val }),
+      });
+      addLog(`SUCCESS: Display mode toggled to: ${val.toUpperCase()}`, "success");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSetFontFamily = async (val: FontFamily) => {
+    setFontFamily(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "font_family", value: val }),
+      });
+      addLog(`SUCCESS: Font family configured to: ${val}`, "success");
+    } catch (err) { console.error(err); }
   };
 
   const handleSetTabEditorFontSize = async (val: string) => {
@@ -1173,7 +1266,7 @@ export const useNeuron = () => {
       {
         label: "Toggle Visual Dark/Light Contrast",
         category: "Style Settings",
-        action: () => setDarkMode((prev) => !prev),
+        action: () => setThemeMode((prev) => prev === "dark" ? "light" : "dark"),
       },
       {
         label: "Toggle Diagnostic Terminal HUD logs [⌘J / Ctrl+J]",
@@ -1218,8 +1311,12 @@ export const useNeuron = () => {
     isCustomScope,
     startupCwd,
     isSavingScope,
-    darkMode,
-    setDarkMode,
+    themeName,
+    setThemeName,
+    themeMode,
+    setThemeMode,
+    fontFamily,
+    setFontFamily,
     showDocs,
     setShowDocs,
     showApiDocs,
@@ -1356,6 +1453,9 @@ export const useNeuron = () => {
     handleToggleTerminalCollapseDefault,
     handleToggleEnableProjectClusters,
     handleToggleEnableVerificationCi,
+    handleSetThemeName,
+    handleSetThemeMode,
+    handleSetFontFamily,
     handleSetTabEditorFontSize,
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,

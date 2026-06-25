@@ -28,8 +28,8 @@ export default function Page() {
           projects={state.projects}
           selectedProject={state.selectedProject}
           hiddenProjectIds={state.hiddenProjectIds}
-          darkMode={state.darkMode}
-          setDarkMode={state.setDarkMode}
+          darkMode={state.themeMode === "dark"}
+          setDarkMode={(val: boolean) => state.setThemeMode(val ? "dark" : "light")}
           showDocs={state.showDocs}
           setShowDocs={state.setShowDocs}
           showApiDocs={state.showApiDocs}
@@ -134,6 +134,12 @@ export default function Page() {
               onToggleEnableProjectClusters={state.handleToggleEnableProjectClusters}
               enableVerificationCi={state.enableVerificationCi}
               onToggleEnableVerificationCi={state.handleToggleEnableVerificationCi}
+              themeName={state.themeName}
+              onSetThemeName={state.handleSetThemeName}
+              themeMode={state.themeMode}
+              onSetThemeMode={state.handleSetThemeMode}
+              fontFamily={state.fontFamily}
+              onSetFontFamily={state.handleSetFontFamily}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard
@@ -165,7 +171,7 @@ export default function Page() {
               onProvision={state.handleProvision}
               onQuickTrackProject={state.handleQuickTrackProject}
               onRefreshDiscovery={state.fetchDiscoveredDirs}
-              darkMode={state.darkMode}
+              darkMode={state.themeMode === "dark"}
             />
           ) : (
             <ProjectDashboard

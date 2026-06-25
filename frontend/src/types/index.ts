@@ -80,3 +80,41 @@ export interface CheckStatus {
   lint_output: string;
   checked_at: string;
 }
+
+export type ThemeName = "neuron" | "dracula" | "nord" | "cyberpunk" | "github";
+export type ThemeMode = "dark" | "light";
+export type FontFamily = "jetbrains-mono" | "fira-code" | "source-code-pro" | "ibm-plex-mono" | "cascadia-code" | "roboto-mono" | "inconsolata" | "space-mono" | "ubuntu-mono" | "cousine";
+
+export interface ThemeInfo {
+  id: ThemeName;
+  label: string;
+  description: string;
+}
+
+export interface FontFamilyInfo {
+  id: FontFamily;
+  label: string;
+  googleFont: string; // URL-safe Google Font family name
+  previewText: string;
+}
+
+export const THEMES: ThemeInfo[] = [
+  { id: "neuron", label: "Neuron (Green Terminal)", description: "Neon-green text on deep black — high contrast hacking aesthetic" },
+  { id: "dracula", label: "Dracula (Purple Syntax)", description: "Warm purple/magenta accents on dark blue-grey background" },
+  { id: "nord", label: "Nord (Arctic Night)", description: "Cool frost-blue grays with soft pastel syntax highlighting" },
+  { id: "cyberpunk", label: "Cyberpunk 2077", description: "Electric yellow and pink neon on pure black terminal" },
+  { id: "github", label: "GitHub Developer", description: "Clean developer platform — soft grays with comfortable contrast" },
+];
+
+export const FONTS: FontFamilyInfo[] = [
+  { id: "jetbrains-mono", label: "JetBrains Mono", googleFont: "JetBrains+Mono", previewText: "// JetBrains: ligature-rich developer precision" },
+  { id: "fira-code", label: "Fira Code", googleFont: "Fira+Code", previewText: "// Fira Code: powerful programming ligatures" },
+  { id: "source-code-pro", label: "Source Code Pro", googleFont: "Source+Code+Pro", previewText: "// Source Code Pro: Adobe clean reading" },
+  { id: "ibm-plex-mono", label: "IBM Plex Mono", googleFont: "IBM+Plex+Mono", previewText: "// IBM Plex Mono: corporate high-legibility" },
+  { id: "cascadia-code", label: "Cascadia Code", googleFont: "Cascadia+Code", previewText: "// Cascadia Code: Windows modern terminal" },
+  { id: "roboto-mono", label: "Roboto Mono", googleFont: "Roboto+Mono", previewText: "// Roboto Mono: geometric Android-native clarity" },
+  { id: "inconsolata", label: "Inconsolata", googleFont: "Inconsolata", previewText: "// Inconsolata: timeless developer favorite" },
+  { id: "space-mono", label: "Space Mono", googleFont: "Space+Mono", previewText: "// Space Mono: retro-futuristic fixed width" },
+  { id: "ubuntu-mono", label: "Ubuntu Mono", googleFont: "Ubuntu+Mono", previewText: "// Ubuntu Mono: Linux system typeface" },
+  { id: "cousine", label: "Cousine", googleFont: "Cousine", previewText: "// Cousine: ChromeOS-friendly clean mono" },
+];

@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ─── NEURON (Default) — Neon Green Terminal ─── */
+[data-theme="neuron"] {
   color-scheme: dark;
   --terminal-black: #050505;
   --terminal-dark: #0a0a0c;
@@ -17,8 +22,7 @@
   --terminal-muted: #71717a;
   --terminal-border: #27272a;
 }
-
-.light {
+[data-theme="neuron"].light {
   color-scheme: light;
   --terminal-black: #fafafa;
   --terminal-dark: #f4f4f5;
@@ -34,10 +38,138 @@
   --terminal-border: #d4d4d8;
 }
 
+/* ─── DRACULA — Purple/Magenta Syntax ─── */
+[data-theme="dracula"] {
+  color-scheme: dark;
+  --terminal-black: #1e1e2e;
+  --terminal-dark: #282a36;
+  --terminal-gray: #343746;
+  --terminal-light-gray: #44475a;
+  --terminal-green: #50fa7b;
+  --terminal-dark-green: #1a4430;
+  --terminal-cyan: #8be9fd;
+  --terminal-yellow: #f1fa8c;
+  --terminal-red: #ff5555;
+  --terminal-text: #f8f8f2;
+  --terminal-muted: #6272a4;
+  --terminal-border: #44475a;
+}
+[data-theme="dracula"].light {
+  color-scheme: light;
+  --terminal-black: #f8f8fa;
+  --terminal-dark: #edeef3;
+  --terminal-gray: #dbdce3;
+  --terminal-light-gray: #c9cad4;
+  --terminal-green: #1a8a40;
+  --terminal-dark-green: #c8f0d4;
+  --terminal-cyan: #3a8fa0;
+  --terminal-yellow: #8a7a20;
+  --terminal-red: #c04040;
+  --terminal-text: #1e1e2e;
+  --terminal-muted: #6a72a0;
+  --terminal-border: #c9cad4;
+}
+
+/* ─── NORD — Cool Arctic Blue-Gray ─── */
+[data-theme="nord"] {
+  color-scheme: dark;
+  --terminal-black: #242933;
+  --terminal-dark: #2e3440;
+  --terminal-gray: #3b4252;
+  --terminal-light-gray: #434c5e;
+  --terminal-green: #a3be8c;
+  --terminal-dark-green: #2e3a24;
+  --terminal-cyan: #88c0d0;
+  --terminal-yellow: #ebcb8b;
+  --terminal-red: #bf616a;
+  --terminal-text: #eceff4;
+  --terminal-muted: #7b88a1;
+  --terminal-border: #434c5e;
+}
+[data-theme="nord"].light {
+  color-scheme: light;
+  --terminal-black: #eceef4;
+  --terminal-dark: #d8dee9;
+  --terminal-gray: #c4cad6;
+  --terminal-light-gray: #b0b9ca;
+  --terminal-green: #4c6a3e;
+  --terminal-dark-green: #d0e6c8;
+  --terminal-cyan: #4a7a8a;
+  --terminal-yellow: #8a6a30;
+  --terminal-red: #8a4048;
+  --terminal-text: #2e3440;
+  --terminal-muted: #7b88a1;
+  --terminal-border: #b0b9ca;
+}
+
+/* ─── CYBERPUNK — Neon Yellow/Pink 2077 ─── */
+[data-theme="cyberpunk"] {
+  color-scheme: dark;
+  --terminal-black: #0a0a0a;
+  --terminal-dark: #111011;
+  --terminal-gray: #1a181a;
+  --terminal-light-gray: #2a242a;
+  --terminal-green: #00ff9d;
+  --terminal-dark-green: #003318;
+  --terminal-cyan: #00e5ff;
+  --terminal-yellow: #ffee00;
+  --terminal-red: #ff2a6d;
+  --terminal-text: #e0d8f0;
+  --terminal-muted: #8a6080;
+  --terminal-border: #2a2430;
+}
+[data-theme="cyberpunk"].light {
+  color-scheme: light;
+  --terminal-black: #f5f0e8;
+  --terminal-dark: #ede4d8;
+  --terminal-gray: #e0d6c8;
+  --terminal-light-gray: #d2c6b8;
+  --terminal-green: #007a48;
+  --terminal-dark-green: #c0f0d8;
+  --terminal-cyan: #007088;
+  --terminal-yellow: #8a7a00;
+  --terminal-red: #c0204a;
+  --terminal-text: #1a1018;
+  --terminal-muted: #8a6080;
+  --terminal-border: #c8b8c0;
+}
+
+/* ─── GITHUB — Clean Developer Platform ─── */
+[data-theme="github"] {
+  color-scheme: dark;
+  --terminal-black: #0d1117;
+  --terminal-dark: #161b22;
+  --terminal-gray: #21262d;
+  --terminal-light-gray: #30363d;
+  --terminal-green: #3fb950;
+  --terminal-dark-green: #1a3d20;
+  --terminal-cyan: #58a6ff;
+  --terminal-yellow: #d29922;
+  --terminal-red: #f85149;
+  --terminal-text: #c9d1d9;
+  --terminal-muted: #8b949e;
+  --terminal-border: #30363d;
+}
+[data-theme="github"].light {
+  color-scheme: light;
+  --terminal-black: #ffffff;
+  --terminal-dark: #f6f8fa;
+  --terminal-gray: #eaeef2;
+  --terminal-light-gray: #d0d7de;
+  --terminal-green: #1a7f37;
+  --terminal-dark-green: #b8e6c0;
+  --terminal-cyan: #0969da;
+  --terminal-yellow: #9a6700;
+  --terminal-red: #cf222e;
+  --terminal-text: #24292f;
+  --terminal-muted: #57606a;
+  --terminal-border: #d0d7de;
+}
+
 body {
   background-color: var(--terminal-black);
   color: var(--terminal-text);
-  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
