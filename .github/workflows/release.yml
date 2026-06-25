@@ -1,0 +1,63 @@
+name: Cross-Platform Release Build
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger automatically whenever a tagged release (v1.4.0, etc.) is pushed!
+
+jobs:
+  build-release:
+    name: Build & Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: neuron
+            asset_name: neuron-linux-amd64.tar.gz
+          - os: windows-latest
+            artifact_name: neuron.exe
+            asset_name: neuron-windows-amd64.zip
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compile Web HUD static assets
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Compile Native Go Binary (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p dist
+          go build -o dist/${{ matrix.artifact_name }} cmd/neuron/main.go
+          tar -czf dist/${{ matrix.asset_name }} -C dist ${{ matrix.artifact_name }}
+
+      - name: Compile Native Go Binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          go build -o dist/${{ matrix.artifact_name }} cmd/neuron/main.go
+          Compress-Archive -Path dist/${{ matrix.artifact_name }} -DestinationPath dist/${{ matrix.asset_name }}
+
+      - name: Upload Binaries to Existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.asset_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
