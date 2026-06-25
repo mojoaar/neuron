@@ -968,6 +968,11 @@ export const useNeuron = () => {
         action: () => setDarkMode((prev) => !prev),
       },
       {
+        label: "Toggle Diagnostic Terminal HUD logs [⌘J / Ctrl+J]",
+        category: "Command Control",
+        action: () => setIsTerminalCollapsed((prev) => !prev),
+      },
+      {
         label: "Open Neuron GitHub Repository",
         category: "Source Code",
         action: () => window.open("https://github.com/mojoaar/neuron", "_blank"),

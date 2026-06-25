@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
               title="Toggle Dark/Light Mode"
             >
-              {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {darkMode ? <Sun className="w-3.5 h-3.5 text-yellow-500 animate-pulse" /> : <Moon className="w-3.5 h-3.5 text-cyan-400" />}
             </button>
           </div>
         </div>
