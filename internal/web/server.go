@@ -64,6 +64,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/templates", s.handleSystemTemplates)
 	mux.HandleFunc("/api/system/skills", s.handleSystemSkills)
 	mux.HandleFunc("/api/system/shutdown", s.handleShutdown)
+	mux.HandleFunc("/api/system/settings", s.handleSystemSettings)
 
 	// Embed static client
 	sub, err := fs.Sub(frontendFS, "frontend/out")
@@ -1253,4 +1254,56 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Graceful shutdown requested via Web HUD. Terminating server process.")
 		os.Exit(0)
 	}()
+}
+
+func (s *Server) handleSystemSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	switch r.Method {
+	case http.MethodGet:
+		key := r.URL.Query().Get("key")
+		if key == "" {
+			respondError(w, http.StatusBadRequest, "Missing key parameter")
+			return
+		}
+		val, err := s.store.GetSetting(ctx, key)
+		if err != nil {
+			respondJSON(w, http.StatusOK, map[string]string{"key": key, "value": ""})
+			return
+		}
+		respondJSON(w, http.StatusOK, map[string]string{"key": key, "value": val})
+
+	case http.MethodPost:
+		var req struct {
+			Key   string `json:"key"`
+			Value string `json:"value"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			respondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if req.Key == "" {
+			respondError(w, http.StatusBadRequest, "Missing key")
+			return
+		}
+		if err := s.store.SaveSetting(ctx, req.Key, req.Value); err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondJSON(w, http.StatusOK, map[string]string{"key": req.Key, "value": req.Value})
+
+	case http.MethodDelete:
+		key := r.URL.Query().Get("key")
+		if key == "" {
+			respondError(w, http.StatusBadRequest, "Missing key")
+			return
+		}
+		if err := s.store.DeleteSetting(ctx, key); err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+	default:
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
 }

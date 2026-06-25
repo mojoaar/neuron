@@ -770,9 +770,9 @@ func (s *Storage) GetSetting(ctx context.Context, key string) (string, error) {
 func (s *Storage) SaveSetting(ctx context.Context, key, val string) error {
 	query := `
 		INSERT INTO system_settings (key, value, updated_at)
-		VALUES (?, ?, CURRENT_TIMESTAMP)
-		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP;`
-	_, err := s.db.ExecContext(ctx, query, key, val)
+		VALUES (?, ?, ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at;`
+	_, err := s.db.ExecContext(ctx, query, key, val, time.Now())
 	return err
 }
 

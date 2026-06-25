@@ -406,6 +406,7 @@ export default function Home() {
   const [selectedDocSlug, setSelectedDocSlug] = useState<"started" | "mcp" | "skills" | "taskboard" | "service">("started");
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [isServerDisconnected, setIsServerDisconnected] = useState(false);
+  const [hiddenProjectIds, setHiddenProjectIds] = useState<string[]>([]);
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -581,6 +582,7 @@ export default function Home() {
     fetchCwd();
     fetchSystemTemplates();
     fetchCatalogSkills();
+    fetchHiddenProjectIds();
     fetchProjects(true);
   }, []);
 
@@ -784,6 +786,63 @@ export default function Home() {
       addLog(`Failed to save rules: ${err.message}`, "error");
     } finally {
       setIsSavingRules(false);
+    }
+  };
+
+  const fetchHiddenProjectIds = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=hidden_project_ids");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.value) {
+          setHiddenProjectIds(data.value.split(",").filter((id: string) => id !== ""));
+        } else {
+          setHiddenProjectIds([]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleHideProject = async (projectId: string) => {
+    const newList = [...hiddenProjectIds, projectId];
+    const val = newList.join(",");
+    addLog(`Hiding project: [${projectId}] ...`, "info");
+    try {
+      const res = await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "hidden_project_ids", value: val }),
+      });
+      if (res.ok) {
+        setHiddenProjectIds(newList);
+        if (selectedProject?.id === projectId) {
+          setSelectedProject(null);
+        }
+        addLog(`SUCCESS: Project [${projectId}] hidden from view.`, "success");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUnhideProject = async (projectId: string) => {
+    const newList = hiddenProjectIds.filter(id => id !== projectId);
+    const val = newList.join(",");
+    addLog(`Unhiding project: [${projectId}] ...`, "info");
+    try {
+      const res = await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "hidden_project_ids", value: val }),
+      });
+      if (res.ok) {
+        setHiddenProjectIds(newList);
+        addLog(`SUCCESS: Project [${projectId}] restored.`, "success");
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -1439,7 +1498,7 @@ export default function Home() {
                   No registered systems found. Use provisioner wizard below.
                 </div>
               ) : (
-                projects.map((proj) => {
+                projects.filter((p) => !hiddenProjectIds.includes(p.id)).map((proj) => {
                   const isActive = selectedProject?.id === proj.id && !showSystemSettings && !showDocs && !showApiDocs;
                   return (
                     <button
@@ -1473,7 +1532,18 @@ export default function Home() {
                           <span className={`font-bold text-xs truncate ${isActive ? "text-terminal-green" : "text-terminal-text"}`}>
                             {proj.name}
                           </span>
-                          <span className={`text-[9px] uppercase border px-1 rounded font-bold ${
+                          <div className="flex items-center space-x-1.5 shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleHideProject(proj.id);
+                              }}
+                              className="text-[10px] text-terminal-muted hover:text-terminal-red opacity-0 group-hover:opacity-100 transition-opacity font-bold select-none pr-0.5"
+                              title="Hide from sidebar"
+                            >
+                              [×]
+                            </button>
+                            <span className={`text-[9px] uppercase border px-1 rounded font-bold ${
                             proj.tech_stack === "go"
                               ? "border-cyan-500/30 text-cyan-400 bg-cyan-950/20"
                               : proj.tech_stack === "node"
@@ -1490,6 +1560,7 @@ export default function Home() {
                           }`}>
                             {proj.tech_stack}
                           </span>
+                          </div>
                         </div>
                         <div className="text-[10px] text-terminal-muted truncate mt-1 flex items-center space-x-1">
                           <Folder className="w-3 h-3 flex-shrink-0 text-terminal-muted" />
@@ -1933,6 +2004,38 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {/* HIDDEN PROJECTS MANAGER */}
+              {hiddenProjectIds.length > 0 && (
+                <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5">
+                  <div className="flex items-center space-x-2 border-b border-terminal-border pb-2.5 mb-4">
+                    <Settings className="w-5 h-5 text-terminal-cyan animate-pulse" />
+                    <h3 className="font-bold text-sm text-terminal-cyan uppercase">[ HIDDEN PROJECTS MANAGER ]</h3>
+                  </div>
+                  <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+                    List of registered codebases currently hidden from the left-hand project sidebar explorer list.
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {hiddenProjectIds.map((pid) => {
+                      const proj = projects.find((p) => p.id === pid);
+                      return (
+                        <div key={pid} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between">
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-terminal-green truncate">{proj ? proj.name : pid}</div>
+                            <div className="text-[9px] text-terminal-muted font-mono mt-0.5 truncate max-w-sm">{proj ? proj.path : "Database entry"}</div>
+                          </div>
+                          <button
+                            onClick={() => handleUnhideProject(pid)}
+                            className="bg-terminal-gray border border-terminal-border hover:border-terminal-green hover:text-terminal-green text-terminal-text text-[10px] font-bold py-1 px-3 rounded shrink-0"
+                          >
+                            UNHIDE
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* RECOMMENDED SKILLS CATALOG CRUD */}
               <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5">
