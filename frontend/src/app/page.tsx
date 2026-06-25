@@ -38,6 +38,7 @@ export default function Page() {
           onSelectProvisioner={() => state.setSelectedProject(null)}
           onHideProject={state.handleHideProject}
           onShutdownServer={state.handleShutdownServer}
+          onTriggerSearch={() => state.setShowCommandPalette(true)}
         />
 
         {/* Dynamic Inner Panel Viewport */}

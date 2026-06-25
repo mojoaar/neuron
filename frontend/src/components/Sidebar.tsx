@@ -29,6 +29,7 @@ interface SidebarProps {
   onSelectProvisioner: () => void;
   onHideProject: (id: string) => void;
   onShutdownServer: () => void;
+  onTriggerSearch: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -47,24 +48,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectProvisioner,
   onHideProject,
   onShutdownServer,
+  onTriggerSearch,
 }) => {
   const visibleProjects = projects.filter((p) => !hiddenProjectIds.includes(p.id));
 
   return (
     <div className="w-64 border-r border-terminal-border bg-terminal-dark flex flex-col shrink-0">
       {/* Title Header */}
-      <div className="p-4 border-b border-terminal-border flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <TerminalIcon className="w-5 h-5 text-terminal-green animate-pulse" />
-          <span className="font-bold text-xs uppercase tracking-wider text-terminal-text font-mono">
-            [ NEURON_HUD ]
-          </span>
+      <div className="p-4 border-b border-terminal-border flex flex-col space-y-3 shrink-0 bg-terminal-black/15">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onSelectProvisioner}
+            className="flex items-center space-x-2 text-left group"
+            title="Return to Systems Provisioner Wizard"
+          >
+            <TerminalIcon className="w-5 h-5 text-terminal-green animate-pulse group-hover:scale-105 transition-transform" />
+            <span className="font-bold text-xs uppercase tracking-wider text-terminal-text font-mono group-hover:text-terminal-green transition-colors">
+              [ NEURON_HUD ]
+            </span>
+          </button>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text shrink-0"
+          >
+            {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          </button>
         </div>
+
+        {/* Clickable search button */}
         <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="p-1 rounded hover:bg-terminal-gray border border-terminal-border text-terminal-muted hover:text-terminal-text"
+          onClick={onTriggerSearch}
+          className="w-full text-[10px] text-terminal-muted flex items-center justify-between hover:text-terminal-green bg-terminal-black hover:bg-terminal-black/75 border border-terminal-border px-2.5 py-1.5 rounded transition-all select-none font-mono"
         >
-          {darkMode ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          <span className="flex items-center space-x-1.5">
+            <TerminalIcon className="w-3 h-3 text-terminal-green" />
+            <span>Search HUD...</span>
+          </span>
+          <kbd className="bg-terminal-gray border border-terminal-border px-1.5 rounded text-[8px] shrink-0 font-sans">⌘K</kbd>
         </button>
       </div>
 
