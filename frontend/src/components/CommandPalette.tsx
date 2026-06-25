@@ -29,13 +29,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectOption,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (showCommandPalette && inputRef.current) {
       inputRef.current.focus();
     }
   }, [showCommandPalette]);
+
+  // Auto-scroll selected item into view
+  useEffect(() => {
+    if (!listRef.current) return;
+    const selected = listRef.current.querySelector(`[data-idx="${paletteSelectedIndex}"]`);
+    if (selected) {
+      selected.scrollIntoView({ block: "nearest" });
+    }
+  }, [paletteSelectedIndex, showCommandPalette]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,7 +80,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <div className="fixed inset-0 bg-terminal-dark/80 backdrop-blur-sm z-50 flex items-start justify-center pt-24 px-4 font-mono">
       <div
-        ref={containerRef}
+        ref={inputRef}
         className="max-w-xl w-full border border-terminal-border bg-terminal-black rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden"
       >
         {/* Input area */}
@@ -92,7 +101,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Options list */}
-        <div className="max-h-72 overflow-y-auto p-2 space-y-1.5 scrollbar-thin scrollbar-thumb-terminal-border">
+        <div ref={listRef} className="max-h-72 overflow-y-auto p-2 space-y-1.5 scrollbar-thin scrollbar-thumb-terminal-border">
           {visible.length === 0 ? (
             <div className="text-center p-8 text-xs text-terminal-muted">
               No matching workspace search commands found.
@@ -102,6 +111,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               const isSelected = paletteSelectedIndex === idx;
               return (
                 <div
+                  data-idx={idx}
                   key={opt.label}
                   onClick={() => onSelectOption(idx)}
                   className={`p-2.5 rounded cursor-pointer flex items-center justify-between text-xs transition-all border ${

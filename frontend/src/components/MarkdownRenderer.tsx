@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -50,9 +50,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
                 {children}
               </code>
             ) : (
-              <pre className="bg-terminal-black border border-terminal-border p-3 rounded font-mono text-[10px] text-terminal-green overflow-x-auto my-3 leading-relaxed">
-                <code>{children}</code>
-              </pre>
+              <CopyCodeBlock content={children as string} />
             );
           },
           hr: () => <hr className="border-t border-terminal-border my-4" />,
@@ -78,5 +76,34 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
         {content}
       </ReactMarkdown>
     </div>
+  );
+};
+
+const CopyCodeBlock: React.FC<{ content: string }> = ({ content }) => {
+  const [copied, setCopied] = useState(false);
+  const preRef = React.useRef<HTMLPreElement>(null);
+
+  const handleCopy = async () => {
+    if (!preRef.current) return;
+    const text = preRef.current.innerText || preRef.current.textContent || "";
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // fallback
+    }
+  };
+
+  return (
+    <pre className="relative group bg-terminal-black border border-terminal-border p-3 rounded font-mono text-[10px] text-terminal-green overflow-x-auto my-3 leading-relaxed" ref={preRef}>
+      <code>{content}</code>
+      <button
+        onClick={handleCopy}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-terminal-gray border border-terminal-border text-[9px] font-bold text-terminal-muted hover:text-terminal-green hover:border-terminal-green px-2 py-1 rounded transition-all select-none"
+      >
+        {copied ? "[ COPIED! ]" : "[ COPY ]"}
+      </button>
+    </pre>
   );
 };

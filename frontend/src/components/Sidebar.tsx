@@ -12,7 +12,8 @@ import {
   Github,
   Database,
   EyeOff,
-  Layers
+  Layers,
+  Info
 } from "lucide-react";
 import { Project, Cluster } from "../types";
 import { TechIcon } from "./TechIcon";
@@ -42,6 +43,7 @@ interface SidebarProps {
   enableProjectClusters: boolean;
   showDbViewer: boolean;
   setShowDbViewer: (val: boolean) => void;
+  version: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -69,6 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   enableProjectClusters,
   showDbViewer,
   setShowDbViewer,
+  version,
 }) => {
   const [isAddingCluster, setIsAddingCluster] = React.useState(false);
   const [newClusterName, setNewClusterName] = React.useState("");
@@ -340,6 +343,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse shrink-0" />
             <span>SERVER:127.0.0.1:8080</span>
           </div>
+          {version && (
+            <div className="flex items-center space-x-1.5 bg-terminal-gray/10 px-2 py-1.5 rounded border border-terminal-border/40">
+              <Info className="w-3 h-3 text-terminal-muted" />
+              <span className="font-mono font-bold">NEURON:v{version}</span>
+            </div>
+          )}
         </div>
 
         <button

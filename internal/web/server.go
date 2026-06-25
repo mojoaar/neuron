@@ -33,9 +33,10 @@ type Server struct {
 	startupCwd string
 	httpServer *http.Server
 	mu         sync.RWMutex
+	version    string
 }
 
-func NewServer(store *storage.Storage, port int) *Server {
+func NewServer(store *storage.Storage, port int, version string) *Server {
 	cwd, err := os.Getwd()
 	if err != nil {
 		cwd = "."
@@ -56,6 +57,7 @@ func NewServer(store *storage.Storage, port int) *Server {
 		port:       port,
 		cwd:        cwd,
 		startupCwd: startupCwd,
+		version:    version,
 	}
 }
 
@@ -77,6 +79,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/db/truncate", s.handleDbTruncate)
 	mux.HandleFunc("/api/system/activity", s.handleActivity)
 	mux.HandleFunc("/api/system/api-key", s.handleApiKey)
+	mux.HandleFunc("/api/system/version", s.handleVersion)
 	mux.HandleFunc("/api/clusters", s.handleClusters)
 	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
 
@@ -1548,6 +1551,11 @@ func (s *Server) handleApiKey(w http.ResponseWriter, r *http.Request) {
 	default:
 		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
+}
+
+// handleVersion returns the application version.
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, map[string]string{"version": s.version})
 }
 
 func (s *Server) handleClusters(w http.ResponseWriter, r *http.Request) {

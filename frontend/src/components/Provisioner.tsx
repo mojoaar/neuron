@@ -53,10 +53,10 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
   };
 
   return (
-    <div className="flex-1 p-8 overflow-y-auto flex items-start justify-center max-w-6xl mx-auto w-full gap-6 font-mono">
+    <div className="flex-1 p-8 overflow-y-auto flex items-start w-full gap-6 font-mono">
       {/* Left Form: Manual Provisioning */}
       <div 
-        className="flex-1 max-w-xl border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0"
+        className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0"
         style={{ boxShadow: darkMode ? "0 0 20px rgba(0,0,0,0.8)" : "0 0 20px rgba(0,0,0,0.06)" }}
       >
         <div className="relative">
@@ -156,7 +156,7 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
 
       {/* Right List: Discovered directories */}
       <div 
-        className="w-[450px] border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0 flex flex-col max-h-[600px]"
+        className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shrink-0 flex flex-col max-h-[600px]"
         style={{ boxShadow: darkMode ? "0 0 20px rgba(0,0,0,0.8)" : "0 0 20px rgba(0,0,0,0.06)" }}
       >
         <div className="flex items-center justify-between border-b border-terminal-border pb-3 mb-4">

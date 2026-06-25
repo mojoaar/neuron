@@ -69,7 +69,7 @@ var (
 				}
 			}()
 
-			srv := web.NewServer(store, uiPort)
+			srv := web.NewServer(store, uiPort, "1.4.0")
 			return srv.Start()
 		},
 	}

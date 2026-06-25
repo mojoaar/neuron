@@ -69,6 +69,7 @@ export const useNeuron = () => {
   const [catalogSkills, setCatalogSkills] = useState<CatalogSkill[]>([]);
   const [customStackLabels, setCustomStackLabels] = useState<Record<string, string>>({});
   const [apiKey, setApiKey] = useState("");
+  const [version, setVersion] = useState("");
   const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
   const [isAddingCatalogSkill, setIsAddingCatalogSkill] = useState(false);
   const [newCatUrl, setNewCatUrl] = useState("");
@@ -262,6 +263,7 @@ export const useNeuron = () => {
     fetchThemeSettings();
     fetchCustomStackLabels();
     fetchApiKey();
+    fetchVersion();
     fetchActivityLog();
     fetchClusters();
     fetchDiscoveredDirs();
@@ -693,6 +695,16 @@ export const useNeuron = () => {
       if (res.ok) {
         const data = await res.json();
         setApiKey(data.api_key || "");
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchVersion = async () => {
+    try {
+      const res = await fetch("/api/system/version");
+      if (res.ok) {
+        const data = await res.json();
+        setVersion(data.version || "");
       }
     } catch (err) { console.error(err); }
   };
@@ -1418,6 +1430,7 @@ export const useNeuron = () => {
     setFontFamily,
     apiKey,
     setApiKey,
+    version,
     activityEntries,
     showDocs,
     setShowDocs,

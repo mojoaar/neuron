@@ -64,6 +64,7 @@ export default function Page() {
           enableProjectClusters={state.enableProjectClusters}
           showDbViewer={state.showDbViewer}
           setShowDbViewer={state.setShowDbViewer}
+          version={state.version}
         />
 
         {/* Dynamic Inner Panel Viewport */}
