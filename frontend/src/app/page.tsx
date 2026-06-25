@@ -111,6 +111,8 @@ export default function Page() {
               onDeleteCatalogSkill={state.handleDeleteCatalogSkill}
               terminalCollapsedByDefault={state.terminalCollapsedByDefault}
               onToggleTerminalCollapseDefault={state.handleToggleTerminalCollapseDefault}
+              tabEditorFontSize={state.tabEditorFontSize}
+              onSetTabEditorFontSize={state.handleSetTabEditorFontSize}
             />
           ) : state.selectedProject === null ? (
             <Provisioner
@@ -192,6 +194,7 @@ export default function Page() {
               onDeleteSkill={state.handleDeleteSkill}
               onExportSkills={state.handleExportSkills}
               onSetupMcp={state.handleSetupMcp}
+              tabEditorFontSize={state.tabEditorFontSize}
             />
           )}
         </div>

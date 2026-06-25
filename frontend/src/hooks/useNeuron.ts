@@ -31,6 +31,7 @@ export const useNeuron = () => {
   const [discoveredStacks, setDiscoveredStacks] = useState<Record<string, string>>({});
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [terminalCollapsedByDefault, setTerminalCollapsedByDefault] = useState(false);
+  const [tabEditorFontSize, setTabEditorFontSize] = useState("11px");
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -204,6 +205,7 @@ export const useNeuron = () => {
     fetchCatalogSkills();
     fetchHiddenProjectIds();
     fetchTerminalSettings();
+    fetchTabEditorFontSize();
     fetchDiscoveredDirs();
     fetchProjects(true);
   }, []);
@@ -439,6 +441,37 @@ export const useNeuron = () => {
       }
     } catch (err) {
       console.error("Failed to load terminal settings:", err);
+    }
+  };
+
+  const fetchTabEditorFontSize = async () => {
+    try {
+      const res = await fetch("/api/system/settings?key=tab_editor_font_size");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value) {
+          setTabEditorFontSize(data.value);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load editor font size:", err);
+    }
+  };
+
+  const handleSetTabEditorFontSize = async (val: string) => {
+    setTabEditorFontSize(val);
+    try {
+      await fetch("/api/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "tab_editor_font_size",
+          value: val,
+        }),
+      });
+      addLog(`SUCCESS: Editor and Preview font size configured to: ${val}`, "success");
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -1065,6 +1098,8 @@ export const useNeuron = () => {
     setShowDbViewer,
     terminalCollapsedByDefault,
     setTerminalCollapsedByDefault,
+    tabEditorFontSize,
+    setTabEditorFontSize,
     selectedDocSlug,
     setSelectedDocSlug,
     isTerminalCollapsed,
@@ -1176,6 +1211,7 @@ export const useNeuron = () => {
     handleResetScopePath,
     handleSaveTemplate,
     handleToggleTerminalCollapseDefault,
+    handleSetTabEditorFontSize,
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,
     handleProvision,

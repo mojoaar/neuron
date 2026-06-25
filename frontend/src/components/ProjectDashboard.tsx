@@ -75,6 +75,7 @@ interface ProjectDashboardProps {
   onDeleteSkill: (id: string, name: string) => void;
   onExportSkills: () => void;
   onSetupMcp: (client: "opencode" | "claude") => void;
+  tabEditorFontSize: string;
 }
 
 export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
@@ -136,6 +137,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   onDeleteSkill,
   onExportSkills,
   onSetupMcp,
+  tabEditorFontSize,
 }) => {
   const getTaskPriorityBorder = (prio: string) => {
     switch (prio) {
@@ -224,7 +226,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <textarea
                 value={planContent}
                 onChange={(e) => setPlanContent(e.target.value)}
-                className="flex-1 w-full bg-terminal-black border border-terminal-border text-terminal-text rounded p-4 font-mono text-[11px] outline-none focus:border-terminal-green leading-relaxed resize-none scrollbar-thin scrollbar-thumb-terminal-border"
+                style={{ fontSize: tabEditorFontSize }}
+                className="flex-1 w-full bg-terminal-black border border-terminal-border text-terminal-text rounded p-4 font-mono outline-none focus:border-terminal-green leading-relaxed resize-none scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
 
@@ -233,7 +236,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/40 pb-2.5 mb-4">
                 [ Interactive Plan Preview ]
               </div>
-              <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border">
+              <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border" style={{ fontSize: tabEditorFontSize }}>
                 {planContent ? (
                   <MarkdownRenderer content={planContent} />
                 ) : (
@@ -262,7 +265,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <textarea
                 value={rulesContent}
                 onChange={(e) => setRulesContent(e.target.value)}
-                className="flex-1 w-full bg-terminal-black border border-terminal-border text-terminal-text rounded p-4 font-mono text-[11px] outline-none focus:border-terminal-green leading-relaxed resize-none scrollbar-thin scrollbar-thumb-terminal-border"
+                style={{ fontSize: tabEditorFontSize }}
+                className="flex-1 w-full bg-terminal-black border border-terminal-border text-terminal-text rounded p-4 font-mono outline-none focus:border-terminal-green leading-relaxed resize-none scrollbar-thin scrollbar-thumb-terminal-border"
               />
             </div>
 
@@ -271,7 +275,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/40 pb-2.5 mb-4">
                 [ Rules Preview ]
               </div>
-              <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border">
+              <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border" style={{ fontSize: tabEditorFontSize }}>
                 {rulesContent ? (
                   <MarkdownRenderer content={rulesContent} />
                 ) : (

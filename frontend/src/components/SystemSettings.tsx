@@ -44,6 +44,8 @@ interface SystemSettingsProps {
   onDeleteCatalogSkill: (url: string, label: string) => void;
   terminalCollapsedByDefault: boolean;
   onToggleTerminalCollapseDefault: (val: boolean) => void;
+  tabEditorFontSize: string;
+  onSetTabEditorFontSize: (val: string) => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -79,6 +81,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onDeleteCatalogSkill,
   terminalCollapsedByDefault,
   onToggleTerminalCollapseDefault,
+  tabEditorFontSize,
+  onSetTabEditorFontSize,
 }) => {
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full font-mono">
@@ -138,6 +142,24 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
               className="rounded border-terminal-border bg-terminal-black text-terminal-green focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
             />
           </label>
+        </div>
+
+        {/* Configurable tab editor font size setting */}
+        <div className="border-t border-terminal-border/30 pt-4 mt-4 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold text-terminal-text">[ Tab Editors & Previews Font Size ]</div>
+            <p className="text-[10px] text-terminal-muted leading-relaxed">Adjust the terminal-dark font size used inside your Plan, Agent Rules, and Markdown Preview panels.</p>
+          </div>
+          <select
+            value={tabEditorFontSize}
+            onChange={(e) => onSetTabEditorFontSize(e.target.value)}
+            className="bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold cursor-pointer"
+          >
+            <option value="11px">11px (Default)</option>
+            <option value="13px">13px</option>
+            <option value="15px">15px</option>
+            <option value="17px">17px</option>
+          </select>
         </div>
       </div>
 
