@@ -1,0 +1,13 @@
+# Binaries
+neuron
+neuron.exe
+bin/
+
+# DuckDB files
+*.db
+*.db.tmp
+*.wal
+
+# Test output
+*.test
+*.out
