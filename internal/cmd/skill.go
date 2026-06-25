@@ -117,12 +117,12 @@ var (
 			}
 
 			switch strings.ToLower(proj.TechStack) {
-			case "go":
+			case "go", "html", "python", "android":
 				if err := exportToGoMakefile(proj.Path, skills); err != nil {
 					return fmt.Errorf("failed to export to Makefile: %w", err)
 				}
 				fmt.Println("Successfully exported skills to Makefile!")
-			case "node":
+			case "node", "nextjs":
 				if err := exportToNodePackageJSON(proj.Path, skills); err != nil {
 					return fmt.Errorf("failed to export to package.json: %w", err)
 				}
@@ -159,7 +159,7 @@ func exportToGoMakefile(projPath string, skills []*storage.Skill) error {
 		if sk.Description != "" {
 			sb.WriteString(fmt.Sprintf("# Skill: %s\n", sk.Description))
 		}
-		sb.WriteString(fmt.Sprintf("%s:\n\t%s\n\n", sk.ID, sk.ExecutionPath))
+		sb.WriteString(fmt.Sprintf("%s:\n\t%s\n\n", sk.Name, sk.ExecutionPath))
 	}
 	sb.WriteString("# --- END NEURON SKILLS ---\n")
 	skillsSection := sb.String()
@@ -198,7 +198,7 @@ func exportToNodePackageJSON(projPath string, skills []*storage.Skill) error {
 	}
 
 	for _, sk := range skills {
-		scripts[sk.ID] = sk.ExecutionPath
+		scripts[sk.Name] = sk.ExecutionPath
 	}
 	data["scripts"] = scripts
 

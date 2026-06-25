@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"neuron/internal/storage"
-	"neuron/internal/tui"
+	"neuron/internal/web"
 
 	"github.com/spf13/cobra"
 )
@@ -15,11 +15,13 @@ var (
 	dbPath  string
 	store   *storage.Storage
 	rootCmd = &cobra.Command{
-		Use:   "neuron",
-		Short: "Neuron is an AI-native Lifecycle Manager for software projects",
-		Long:  `A robust CLI and TUI tool that binds conceptual specifications like plan.md to actual code implementations and manages tasks.`,
+		Use:     "neuron",
+		Version: "1.4.0",
+		Short:   "Neuron is an AI-native Lifecycle Manager for software projects",
+		Long:    `A robust CLI tool that binds conceptual specifications like plan.md to actual code implementations and manages tasks.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tui.StartApp(store)
+			srv := web.NewServer(store, 8080)
+			return srv.Start()
 		},
 	}
 )

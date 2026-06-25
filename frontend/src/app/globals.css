@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --terminal-black: #050505;
+  --terminal-dark: #0a0a0c;
+  --terminal-gray: #16161a;
+  --terminal-light-gray: #2a2a32;
+  --terminal-green: #00ff66;
+  --terminal-dark-green: #003314;
+  --terminal-cyan: #00e5ff;
+  --terminal-yellow: #ffcc00;
+  --terminal-red: #ff3366;
+  --terminal-text: #f4f4f5;
+  --terminal-muted: #71717a;
+  --terminal-border: #27272a;
+}
+
+.light {
+  color-scheme: light;
+  --terminal-black: #fafafa;
+  --terminal-dark: #f4f4f5;
+  --terminal-gray: #e4e4e7;
+  --terminal-light-gray: #d4d4d8;
+  --terminal-green: #00882d;
+  --terminal-dark-green: #ccffd6;
+  --terminal-cyan: #006699;
+  --terminal-yellow: #b58900;
+  --terminal-red: #cc0033;
+  --terminal-text: #18181b;
+  --terminal-muted: #71717a;
+  --terminal-border: #d4d4d8;
+}
+
+body {
+  background-color: var(--terminal-black);
+  color: var(--terminal-text);
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar for beautiful terminal look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--terminal-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--terminal-light-gray);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-muted);
+}
+
+@layer base {
+  input, select, textarea, button {
+    @apply font-mono;
+  }
+  input, select, textarea {
+    @apply bg-terminal-gray border border-terminal-border text-terminal-text rounded px-3 py-1.5 focus:outline-none focus:border-terminal-green transition-colors;
+  }
+}

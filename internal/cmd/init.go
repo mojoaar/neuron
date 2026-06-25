@@ -7,14 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"neuron/internal/scaffold"
 	"neuron/internal/storage"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	techStack  string
-	targetPath string
+	techStack   string
+	targetPath  string
+	skillsInput string
 
 	initCmd = &cobra.Command{
 		Use:   "init [project-name]",
@@ -25,8 +27,8 @@ var (
 			projectName := args[0]
 			tech := strings.ToLower(techStack)
 
-			if tech != "go" && tech != "node" {
-				return fmt.Errorf("unsupported tech stack '%s' (supported: go, node)", techStack)
+			if tech != "go" && tech != "node" && tech != "html" && tech != "powershell" && tech != "nextjs" && tech != "python" && tech != "android" {
+				return fmt.Errorf("unsupported tech stack '%s' (supported: go, node, html, powershell, nextjs, python, android)", techStack)
 			}
 
 			p := targetPath
@@ -59,15 +61,25 @@ var (
 
 			fmt.Printf("Scaffolding %s project in %s...\n", tech, absPath)
 
-			if err := scaffoldProject(projectName, absPath, tech); err != nil {
+			ctx := context.Background()
+			tmpl, err := store.GetTemplate(ctx, tech)
+			var agentsTemplate, planTemplate string
+			if err == nil {
+				agentsTemplate = tmpl.AgentsMD
+				planTemplate = tmpl.PlanMD
+			} else {
+				agentsTemplate = storage.GetDefaultAgentsTemplate(tech)
+				planTemplate = storage.GetDefaultPlanTemplate(tech)
+			}
+
+			if err := scaffold.ScaffoldProject(projectName, absPath, tech, planTemplate); err != nil {
 				return fmt.Errorf("scaffolding failed: %w", err)
 			}
 
-			if err := generateAgentsContext(projectName, absPath, tech); err != nil {
+			if err := scaffold.GenerateAgentsContext(projectName, absPath, tech, agentsTemplate); err != nil {
 				return fmt.Errorf("failed to generate AGENTS.md context: %w", err)
 			}
 
-			ctx := context.Background()
 			proj := &storage.Project{
 				ID:        projectName,
 				Name:      projectName,
@@ -79,6 +91,53 @@ var (
 				return fmt.Errorf("scaffolding succeeded but failed to register project in database: %w", err)
 			}
 
+			// Save default skills
+			defaultSkills := scaffold.GetDefaultSkills(projectName, tech)
+			for _, sk := range defaultSkills {
+				sk.ProjectID = projectName
+				sk.ID = projectName + "_" + sk.ID
+				if err := store.AddSkill(ctx, sk); err != nil {
+					fmt.Printf("Warning: failed to add default skill %s: %v\n", sk.ID, err)
+				}
+			}
+
+			// Download and save remote skills
+			if skillsInput != "" {
+				urls := strings.Split(skillsInput, ",")
+				for _, url := range urls {
+					url = strings.TrimSpace(url)
+					if url == "" {
+						continue
+					}
+					fmt.Printf("Downloading remote skill: %s ...\n", url)
+					sk, err := scaffold.DownloadRemoteSkill(absPath, url)
+					if err != nil {
+						fmt.Printf("Warning: failed to download remote skill %s: %v\n", url, err)
+						continue
+					}
+					sk.ProjectID = projectName
+					sk.ID = projectName + "_" + sk.ID
+					if err := store.AddSkill(ctx, sk); err != nil {
+						fmt.Printf("Warning: failed to add remote skill %s: %v\n", sk.ID, err)
+					}
+				}
+			}
+
+			// Auto-export all skills to the project manifest
+			skills, err := store.ListSkillsByProject(ctx, projectName)
+			if err == nil && len(skills) > 0 {
+				var exportErr error
+				switch strings.ToLower(tech) {
+				case "go", "html", "python", "android":
+					exportErr = exportToGoMakefile(absPath, skills)
+				case "node", "nextjs":
+					exportErr = exportToNodePackageJSON(absPath, skills)
+				}
+				if exportErr != nil {
+					fmt.Printf("Warning: failed to auto-export skills: %v\n", exportErr)
+				}
+			}
+
 			fmt.Printf("\nProject '%s' successfully initialized and registered!\n", projectName)
 			fmt.Printf("Target directory: %s\n", absPath)
 			return nil
@@ -87,153 +146,8 @@ var (
 )
 
 func init() {
-	initCmd.Flags().StringVarP(&techStack, "tech", "t", "go", "tech stack to use (go, node)")
+	initCmd.Flags().StringVarP(&techStack, "tech", "t", "go", "tech stack to use (go, node, html, powershell, nextjs, python, android)")
 	initCmd.Flags().StringVarP(&targetPath, "path", "p", "", "destination path (defaults to ./[project-name])")
+	initCmd.Flags().StringVarP(&skillsInput, "skills", "s", "", "comma-separated list of agentskill.sh URLs to install")
 	rootCmd.AddCommand(initCmd)
-}
-
-func scaffoldProject(name, path, tech string) error {
-	switch tech {
-	case "go":
-		goModContent := fmt.Sprintf("module %s\n\ngo 1.22.0\n", name)
-		if err := os.WriteFile(filepath.Join(path, "go.mod"), []byte(goModContent), 0644); err != nil {
-			return err
-		}
-
-		mainContent := `package main
-
-import "fmt"
-
-func main() {
-	fmt.Println("Hello, Neuron-Scaffolded Go Project!")
-}
-`
-		if err := os.WriteFile(filepath.Join(path, "main.go"), []byte(mainContent), 0644); err != nil {
-			return err
-		}
-
-		makefileContent := fmt.Sprintf(`build:
-	go build -o %s main.go
-
-test:
-	go test ./...
-
-run:
-	go run main.go
-`, name)
-		if err := os.WriteFile(filepath.Join(path, "Makefile"), []byte(makefileContent), 0644); err != nil {
-			return err
-		}
-
-	case "node":
-		packageJSON := fmt.Sprintf(`{
-  "name": "%s",
-  "version": "1.0.0",
-  "description": "Clean Node.js template generated by Neuron",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
-  },
-  "dependencies": {}
-}
-`, name)
-		if err := os.WriteFile(filepath.Join(path, "package.json"), []byte(packageJSON), 0644); err != nil {
-			return err
-		}
-
-		indexContent := `console.log("Hello, Neuron-Scaffolded Node.js Project!");
-`
-		if err := os.WriteFile(filepath.Join(path, "index.js"), []byte(indexContent), 0644); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func generateAgentsContext(name, path, tech string) error {
-	var agentsContent string
-
-	switch tech {
-	case "go":
-		agentsContent = fmt.Sprintf(`# AGENTS.md - %s
-
-## Tech Stack
-- Framework: Standard Library Go
-- Language: Go (Golang)
-- Go Version: 1.22+
-
-## Key Commands
-- Build: ~make build~
-- Run: ~make run~
-- Run tests: ~make test~
-
-## Code Style
-- Use standard, idiomatic Go formatting (always run ~go fmt~).
-- Handle errors explicitly and early (~if err != nil { return ... }~).
-- Keep conditional block/loop nesting depth to at most 2 levels; refactor complex loops.
-
-## Boundaries
-### ✅ Always
-- Run linter/tests before considering a task complete.
-- Handle all return errors explicitly.
-
-### ⚠️ Ask First
-- Adding third-party package dependencies.
-- Creating packages outside standard Go project conventions.
-
-### 🚫 Never
-- Commit secrets, credentials, or ~.env~ files.
-- Bypass error returns using blank identifiers (~_~).
-`, name)
-
-	case "node":
-		agentsContent = fmt.Sprintf(`# AGENTS.md - %s
-
-## Tech Stack
-- Runtime: Node.js
-- Package Manager: npm (always use npm, never yarn/pnpm unless specified)
-- Language: JavaScript (ES6+)
-
-## Key Commands
-- Start app: ~npm start~
-- Run tests: ~npm test~
-
-## Code Style
-- Named exports preferred over default exports.
-- Use async/await for asynchronous actions instead of raw promise chains.
-
-## Boundaries
-### ✅ Always
-- Run ~npm test~ before declaring a task complete.
-- Verify node dependencies are stored cleanly.
-
-### ⚠️ Ask First
-- Installing new npm package dependencies.
-- Modifying major entry-point configurations.
-
-### 🚫 Never
-- Commit secrets, ~.env~ files, or private credentials.
-- Force push to main branches.
-`, name)
-	}
-
-	// Replace placeholders with real backticks
-	agentsContent = strings.ReplaceAll(agentsContent, "~", "`")
-
-	agentsPath := filepath.Join(path, "AGENTS.md")
-	if err := os.WriteFile(agentsPath, []byte(agentsContent), 0644); err != nil {
-		return err
-	}
-
-	claudePath := filepath.Join(path, "CLAUDE.md")
-	_ = os.Remove(claudePath)
-	if err := os.Symlink("AGENTS.md", claudePath); err != nil {
-		if errCopy := os.WriteFile(claudePath, []byte(agentsContent), 0644); errCopy != nil {
-			return fmt.Errorf("failed to create symlink and fallback copy: %w", errCopy)
-		}
-	}
-
-	return nil
 }

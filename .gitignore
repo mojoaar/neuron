@@ -1,18 +1,21 @@
-# Binaries
+# Neuron Git Ignore Configurations
+
+# Compiled Binaries
 neuron
 neuron.exe
-bin/
+*.exe
 
-# DuckDB files
-*.db
-*.db.tmp
-*.wal
+# Node dependencies & builds
+node_modules/
+.next/
+out/
+dist/
 
-# Test output
-*.test
-*.out
+# Operating System temporary caches
+.DS_Store
+Thumbs.db
 
-# Scaffolded test apps
+# Testbeds & scaffold samples
+scaffolded-api/
 my-go-app/
 my-node-app/
-
