@@ -407,6 +407,9 @@ export default function Home() {
   const [isTerminalCollapsed, setIsTerminalCollapsed] = useState(false);
   const [isServerDisconnected, setIsServerDisconnected] = useState(false);
   const [hiddenProjectIds, setHiddenProjectIds] = useState<string[]>([]);
+  const [discoveredDirs, setDiscoveredDirs] = useState<{name: string, path: string}[]>([]);
+  const [discoveredStacks, setDiscoveredStacks] = useState<Record<string, string>>({});
+  const [isDiscovering, setIsDiscovering] = useState(false);
 
   // Command Palette
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -583,6 +586,7 @@ export default function Home() {
     fetchSystemTemplates();
     fetchCatalogSkills();
     fetchHiddenProjectIds();
+    fetchDiscoveredDirs();
     fetchProjects(true);
   }, []);
 
@@ -846,6 +850,53 @@ export default function Home() {
     }
   };
 
+  const fetchDiscoveredDirs = async () => {
+    setIsDiscovering(true);
+    try {
+      const res = await fetch("/api/system/discover");
+      if (res.ok) {
+        const data = await res.json();
+        setDiscoveredDirs(data || []);
+        const defaults: Record<string, string> = {};
+        (data || []).forEach((dir: { name: string; path: string }) => {
+          defaults[dir.name] = "go";
+        });
+        setDiscoveredStacks(defaults);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
+
+  const handleQuickTrackProject = async (dirName: string, dirPath: string, tech: string) => {
+    addLog(`Tracking pre-existing workspace: '${dirName}' [${tech.toUpperCase()}]...`, "system");
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: dirName,
+          path: dirPath,
+          tech_stack: tech,
+          skill_urls: []
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addLog(`SUCCESS: Rules context configured and registered.`, "success");
+        await fetchProjects();
+        await fetchDiscoveredDirs();
+        handleSelectProject(data);
+      } else {
+        throw new Error(data.error || "Tracking failed");
+      }
+    } catch (err: any) {
+      addLog(`Quick-track failed: ${err.message}`, "error");
+    }
+  };
+
   const handleSaveScopePath = async () => {
     if (!customScopePath.trim()) return;
     setIsSavingScope(true);
@@ -860,6 +911,7 @@ export default function Home() {
       if (res.ok) {
         addLog(`SUCCESS: Scope configured. Reloading projects...`, "success");
         await fetchCwd();
+        await fetchDiscoveredDirs();
         await fetchProjects(true);
       } else {
         throw new Error(data.error || "Failed to update workspace path");
@@ -882,6 +934,7 @@ export default function Home() {
       if (res.ok) {
         addLog("SUCCESS: Reset to dynamic launch scope directory tracking.", "success");
         await fetchCwd();
+        await fetchDiscoveredDirs();
         await fetchProjects(true);
       } else {
         throw new Error(data.error || "Failed to clear path");
@@ -2167,9 +2220,10 @@ export default function Home() {
               </div>
             </div>
           ) : selectedProject === null ? (
-            /* PROVISIONER SCENE */
-            <div className="flex-1 p-8 overflow-y-auto flex items-center justify-center">
-              <div className="max-w-xl w-full border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+            /* PROVISIONER SCENE - SPLIT SCENE */
+            <div className="flex-1 p-8 overflow-y-auto flex items-start justify-center max-w-6xl mx-auto w-full gap-6">
+              {/* Left Form: Manual Provisioning */}
+              <div className="flex-1 max-w-xl border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                 {/* Visual grid background */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(18,18,18,0.3)_1px,transparent_1px),linear-gradient(90deg,rgba(18,18,18,0.3)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none rounded-lg" />
 
@@ -2437,6 +2491,67 @@ export default function Home() {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+
+              {/* Right List: Discovered directories */}
+              <div className="w-[450px] border border-terminal-border bg-terminal-dark rounded-lg p-6 relative shadow-[0_0_20px_rgba(0,0,0,0.8)] shrink-0 flex flex-col max-h-[600px]">
+                <div className="flex items-center justify-between border-b border-terminal-border pb-3 mb-4">
+                  <div className="flex items-center space-x-2 text-terminal-green">
+                    <Database className="w-5 h-5 animate-pulse" />
+                    <h2 className="font-bold uppercase tracking-wider text-sm">
+                      [ AUTO-DISCOVERED WORKSPACES ]
+                    </h2>
+                  </div>
+                  <button
+                    onClick={fetchDiscoveredDirs}
+                    disabled={isDiscovering}
+                    className="p-1.5 rounded border border-terminal-border text-terminal-muted hover:text-terminal-green bg-terminal-black"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isDiscovering ? "animate-spin text-terminal-green" : ""}`} />
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+                  Unregistered sub-folders found inside your active scope root. Select stack and click [ TRACK ] to instantly register and scaffold coding rules!
+                </p>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                  {discoveredDirs.length === 0 ? (
+                    <div className="text-center p-8 text-terminal-muted border border-dashed border-terminal-border rounded bg-terminal-black text-xs">
+                      {isDiscovering ? "Scanning active scope..." : "No unregistered sub-directories found in current scope."}
+                    </div>
+                  ) : (
+                    discoveredDirs.map((dir) => (
+                      <div key={dir.name} className="p-3 bg-terminal-black border border-terminal-border rounded flex items-center justify-between space-x-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-xs text-terminal-text truncate">{dir.name}</div>
+                          <div className="text-[9px] text-terminal-muted font-mono mt-0.5 truncate">{dir.path}</div>
+                        </div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <select
+                            value={discoveredStacks[dir.name] || "go"}
+                            onChange={(e) => setDiscoveredStacks({...discoveredStacks, [dir.name]: e.target.value})}
+                            className="bg-terminal-gray border border-terminal-border text-terminal-text rounded px-1.5 py-1 outline-none text-[10px] font-mono shrink-0"
+                          >
+                            <option value="go">Go</option>
+                            <option value="node">Node</option>
+                            <option value="nextjs">Next.js</option>
+                            <option value="html">HTML</option>
+                            <option value="python">Python</option>
+                            <option value="android">Android</option>
+                            <option value="powershell">PowerShell</option>
+                          </select>
+                          <button
+                            onClick={() => handleQuickTrackProject(dir.name, dir.path, discoveredStacks[dir.name] || "go")}
+                            className="bg-terminal-green text-terminal-black hover:bg-terminal-green/90 font-bold text-[10px] py-1 px-3 rounded shadow-[0_0_6px_rgba(0,255,102,0.15)] shrink-0"
+                          >
+                            TRACK
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

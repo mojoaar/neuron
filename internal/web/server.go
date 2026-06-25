@@ -65,6 +65,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/skills", s.handleSystemSkills)
 	mux.HandleFunc("/api/system/shutdown", s.handleShutdown)
 	mux.HandleFunc("/api/system/settings", s.handleSystemSettings)
+	mux.HandleFunc("/api/system/discover", s.handleDiscover)
 
 	// Embed static client
 	sub, err := fs.Sub(frontendFS, "frontend/out")
@@ -1254,6 +1255,60 @@ func (s *Server) handleShutdown(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Graceful shutdown requested via Web HUD. Terminating server process.")
 		os.Exit(0)
 	}()
+}
+
+func (s *Server) handleDiscover(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodGet {
+		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	entries, err := os.ReadDir(s.cwd)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to read active directory: "+err.Error())
+		return
+	}
+
+	projects, err := s.store.ListProjects(ctx)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	registeredPaths := make(map[string]bool)
+	for _, p := range projects {
+		registeredPaths[filepath.Clean(p.Path)] = true
+	}
+
+	type DiscoveredFolder struct {
+		Name string `json:"name"`
+		Path string `json:"path"`
+	}
+
+	var discovered []DiscoveredFolder
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") || name == "node_modules" || name == "vendor" || name == "dist" || name == "out" {
+			continue
+		}
+
+		absPath := filepath.Join(s.cwd, name)
+		cleanedPath := filepath.Clean(absPath)
+
+		if !registeredPaths[cleanedPath] {
+			discovered = append(discovered, DiscoveredFolder{
+				Name: name,
+				Path: absPath,
+			})
+		}
+	}
+
+	respondJSON(w, http.StatusOK, discovered)
 }
 
 func (s *Server) handleSystemSettings(w http.ResponseWriter, r *http.Request) {
