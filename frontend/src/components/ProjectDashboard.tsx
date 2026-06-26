@@ -26,7 +26,6 @@ interface ProjectDashboardProps {
   planContent: string;
   setPlanContent: (val: string) => void;
   isSavingPlan: boolean;
-  isImportingPlan: boolean;
   rulesContent: string;
   setRulesContent: (val: string) => void;
   isSavingRules: boolean;
@@ -65,7 +64,6 @@ interface ProjectDashboardProps {
   isExporting: boolean;
   onRefreshGit: (id: string) => void;
   onSavePlan: () => void;
-  onImportPlanChecklist: () => void;
   onSaveRules: () => void;
   onAddTask: (e: React.FormEvent) => void;
   onUpdateTaskStatus: (id: string, status: string) => void;
@@ -93,7 +91,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   planContent,
   setPlanContent,
   isSavingPlan,
-  isImportingPlan,
   rulesContent,
   setRulesContent,
   isSavingRules,
@@ -132,7 +129,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   isExporting,
   onRefreshGit,
   onSavePlan,
-  onImportPlanChecklist,
   onSaveRules,
   onAddTask,
   onUpdateTaskStatus,
@@ -301,14 +297,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
                 <div className="text-[10px] font-bold text-terminal-green uppercase">[ Edit plan.md ]</div>
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={onImportPlanChecklist}
-                    disabled={isImportingPlan}
-                    className="py-1 px-3 border border-terminal-border hover:border-terminal-green hover:text-terminal-green text-[10px] font-bold uppercase rounded transition-all inline-flex items-center space-x-1"
-                  >
-                    {isImportingPlan ? <RefreshCw className="w-3 h-3 animate-spin text-terminal-green" /> : <Plus className="w-3 h-3" />}
-                    <span>Sync Checklists</span>
-                  </button>
                   <button
                     onClick={onSavePlan}
                     disabled={isSavingPlan}
@@ -612,7 +600,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               </div>
 
               {/* Recommendations Catalog */}
-              <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col h-56 shrink-0 overflow-hidden">
+              <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col h-[750px] shrink-0 overflow-hidden">
                 <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/40 pb-2.5 mb-3 shrink-0">
                   [ Recommended skills Catalog Market ]
                 </div>

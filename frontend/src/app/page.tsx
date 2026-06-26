@@ -198,7 +198,6 @@ export default function Page() {
               planContent={state.planContent}
               setPlanContent={state.setPlanContent}
               isSavingPlan={state.isSavingPlan}
-              isImportingPlan={state.isImportingPlan}
               rulesContent={state.rulesContent}
               setRulesContent={state.setRulesContent}
               isSavingRules={state.isSavingRules}
@@ -237,7 +236,6 @@ export default function Page() {
               isExporting={state.isExporting}
               onRefreshGit={state.fetchGitStatus}
               onSavePlan={state.handleSavePlan}
-              onImportPlanChecklist={state.handleImportPlanChecklist}
               onSaveRules={state.handleSaveRules}
               onAddTask={state.handleAddTask}
               onUpdateTaskStatus={state.handleUpdateTaskStatus}

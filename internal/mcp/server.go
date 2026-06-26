@@ -765,5 +765,108 @@ func StartServer(store *storage.Storage) error {
 		return mcp.NewToolResultText(fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), relPath)), nil
 	})
 
+	// 23. Tool: project_search
+	projectSearchTool := mcp.NewTool("project_search",
+		mcp.WithDescription("Search registered projects by name, tech stack, or path"),
+		mcp.WithString("query", mcp.Description("Search term to match against project name, tech stack, or path"), mcp.Required()),
+	)
+	s.AddTool(projectSearchTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		query, err := request.RequireString("query")
+		if err != nil {
+			return mcp.NewToolResultError("Missing required parameter: query"), nil
+		}
+
+		projects, err := store.ListProjects(ctx)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error listing projects: %v", err)), nil
+		}
+
+		q := strings.ToLower(strings.TrimSpace(query))
+		var matched []*storage.Project
+		for _, p := range projects {
+			if strings.Contains(strings.ToLower(p.Name), q) ||
+				strings.Contains(strings.ToLower(p.TechStack), q) ||
+				strings.Contains(strings.ToLower(p.Path), q) {
+				matched = append(matched, p)
+			}
+		}
+
+		if matched == nil {
+			matched = []*storage.Project{}
+		}
+		out, _ := json.MarshalIndent(matched, "", "  ")
+		return mcp.NewToolResultText(string(out)), nil
+	})
+
+	// 24. Tool: exec_command
+	execCommandTool := mcp.NewTool("exec_command",
+		mcp.WithDescription("Run a shell command in the project directory (30s timeout)"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+		mcp.WithString("command", mcp.Description("The shell command to execute"), mcp.Required()),
+	)
+	s.AddTool(execCommandTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err1 := request.RequireString("project_id")
+		cmdStr, err2 := request.RequireString("command")
+		if err1 != nil || err2 != nil || cmdStr == "" {
+			return mcp.NewToolResultError("Missing required parameters"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		ecCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		cmd := exec.CommandContext(ecCtx, "sh", "-c", cmdStr)
+		cmd.Dir = proj.Path
+		output, err := cmd.CombinedOutput()
+		exitCode := 0
+		if err != nil {
+			exitCode = 1
+			if exiterr, ok := err.(*exec.ExitError); ok {
+				exitCode = exiterr.ExitCode()
+			}
+		}
+
+		result, _ := json.MarshalIndent(map[string]interface{}{
+			"stdout":     string(output),
+			"exit_code":  exitCode,
+			"timed_out":  ecCtx.Err() != nil,
+			"project_id": projectID,
+		}, "", "  ")
+
+		return mcp.NewToolResultText(string(result)), nil
+	})
+
+	// 25. Tool: delete_project
+	deleteProjectTool := mcp.NewTool("delete_project",
+		mcp.WithDescription("Permanently delete a project and all associated tasks/skills"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+		mcp.WithString("confirm", mcp.Description("Must be set to 'yes' to confirm deletion"), mcp.Required()),
+	)
+	s.AddTool(deleteProjectTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err1 := request.RequireString("project_id")
+		confirm, err2 := request.RequireString("confirm")
+		if err1 != nil || err2 != nil {
+			return mcp.NewToolResultError("Missing required parameters"), nil
+		}
+		if confirm != "yes" {
+			return mcp.NewToolResultError("This action is destructive. Pass 'confirm' set to 'yes' to proceed."), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		if err := store.DeleteProject(ctx, projectID); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to delete project: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(fmt.Sprintf("Successfully deleted project '%s' (%s) with all tasks/skills.", proj.Name, projectID)), nil
+	})
+
 	return server.ServeStdio(s)
 }

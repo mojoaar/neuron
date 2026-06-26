@@ -40,6 +40,7 @@ export const DbTableBrowser: React.FC<DbTableBrowserProps> = ({
 
   const fetchTableData = async (name: string) => {
     if (!name) return;
+    setDbTableData(null);
     setIsQuerying(true);
     try {
       const res = await fetch(`/api/system/db/table?name=${name}`);

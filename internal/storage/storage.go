@@ -878,6 +878,9 @@ func (s *Storage) QueryTableData(ctx context.Context, tableName string) ([]strin
 		"templates":       true,
 		"skill_catalog":   true,
 		"system_settings": true,
+		"clusters":        true,
+		"cluster_projects": true,
+		"activity_log":    true,
 	}
 	if !allowed[tableName] {
 		return nil, nil, fmt.Errorf("access denied: unauthorized table lookup '%s'", tableName)
