@@ -180,10 +180,11 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodPost:
 		var req struct {
-			Name      string   `json:"name"`
-			Path      string   `json:"path"`
-			TechStack string   `json:"tech_stack"`
-			SkillURLs []string `json:"skill_urls"`
+			Name          string   `json:"name"`
+			Path          string   `json:"path"`
+			TechStack     string   `json:"tech_stack"`
+			SkillURLs     []string `json:"skill_urls"`
+			TrackExisting bool     `json:"track_existing"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			respondError(w, http.StatusBadRequest, "Invalid request payload")
@@ -215,47 +216,54 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Check if target directory is empty
-		entries, err := os.ReadDir(absPath)
-		if err == nil && len(entries) > 0 {
-			hasFiles := false
-			for _, entry := range entries {
-				if entry.Name() != ".git" {
-					hasFiles = true
-					break
+		if !req.TrackExisting {
+			// For fresh provisioning: check that target directory is empty (skip for tracked projects)
+			entries, err := os.ReadDir(absPath)
+			if err == nil && len(entries) > 0 {
+				hasFiles := false
+				for _, entry := range entries {
+					if entry.Name() != ".git" {
+						hasFiles = true
+						break
+					}
+				}
+				if hasFiles {
+					respondError(w, http.StatusBadRequest, "Target directory is not empty")
+					return
 				}
 			}
-			if hasFiles {
-				respondError(w, http.StatusBadRequest, "Target directory is not empty")
+
+			// Fetch custom templates from DuckDB
+			tmpl, err := s.store.GetTemplate(ctx, req.TechStack)
+			var agentsTemplate, planTemplate string
+			if err == nil {
+				agentsTemplate = tmpl.AgentsMD
+				planTemplate = tmpl.PlanMD
+			} else {
+				agentsTemplate = storage.GetDefaultAgentsTemplate(req.TechStack)
+				planTemplate = storage.GetDefaultPlanTemplate(req.TechStack)
+			}
+
+			if err := scaffold.ScaffoldProject(req.Name, absPath, req.TechStack, planTemplate); err != nil {
+				respondError(w, http.StatusInternalServerError, "Scaffolding failed: "+err.Error())
 				return
 			}
-		}
 
-		// Fetch custom templates from DuckDB
-		tmpl, err := s.store.GetTemplate(ctx, req.TechStack)
-		var agentsTemplate, planTemplate string
-		if err == nil {
-			agentsTemplate = tmpl.AgentsMD
-			planTemplate = tmpl.PlanMD
+			if err := scaffold.GenerateAgentsContext(req.Name, absPath, req.TechStack, agentsTemplate); err != nil {
+				respondError(w, http.StatusInternalServerError, "Failed to generate AGENTS.md context: "+err.Error())
+				return
+			}
 		} else {
-			agentsTemplate = storage.GetDefaultAgentsTemplate(req.TechStack)
-			planTemplate = storage.GetDefaultPlanTemplate(req.TechStack)
-		}
-
-		// Scaffold project
-		if err := scaffold.ScaffoldProject(req.Name, absPath, req.TechStack, planTemplate); err != nil {
-			respondError(w, http.StatusInternalServerError, "Scaffolding failed: "+err.Error())
-			return
-		}
-
-		if err := scaffold.GenerateAgentsContext(req.Name, absPath, req.TechStack, agentsTemplate); err != nil {
-			respondError(w, http.StatusInternalServerError, "Failed to generate AGENTS.md context: "+err.Error())
-			return
+			// For tracked pre-existing projects: set up TUI compatibility without touching existing files
+			if err := scaffold.EnsureTUICompatibility(absPath); err != nil {
+				fmt.Printf("Warning: failed to set up TUI compatibility: %v\n", err)
+			}
 		}
 
 		// Save project to database
+		pid := req.Name
 		p := &storage.Project{
-			ID:        req.Name,
+			ID:        pid,
 			Name:      req.Name,
 			Path:      absPath,
 			TechStack: req.TechStack,
@@ -266,13 +274,20 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Save default skills
+		// Save default skills to DuckDB
 		defaultSkills := scaffold.GetDefaultSkills(p.Name, p.TechStack)
 		for _, sk := range defaultSkills {
 			sk.ProjectID = p.ID
 			sk.ID = p.ID + "_" + sk.ID
 			if err := s.store.AddSkill(ctx, sk); err != nil {
 				fmt.Printf("Warning: failed to add default skill %s: %v\n", sk.ID, err)
+			}
+		}
+
+		// Write default skills as SKILL.md files inside .agents/skills/neuron/ (for TUI agent discovery)
+		if req.TrackExisting {
+			if err := scaffold.WriteDefaultSkillFiles(absPath, defaultSkills); err != nil {
+				fmt.Printf("Warning: failed to write default skill files: %v\n", err)
 			}
 		}
 
@@ -294,18 +309,20 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Auto-export all active skills
-		skills, err := s.store.ListSkillsByProject(ctx, p.ID)
-		if err == nil && len(skills) > 0 {
-			var exportErr error
-			switch strings.ToLower(p.TechStack) {
-			case "go", "html", "python", "android":
-				exportErr = export.ExportToGoMakefile(p.Path, skills)
-			case "node", "nextjs":
-				exportErr = export.ExportToNodePackageJSON(p.Path, skills)
-			}
-			if exportErr != nil {
-				fmt.Printf("Warning: failed to auto-export skills on provision: %v\n", exportErr)
+		// Auto-export all active skills (skip for tracked projects to avoid modifying their files)
+		if !req.TrackExisting {
+			skills, err := s.store.ListSkillsByProject(ctx, p.ID)
+			if err == nil && len(skills) > 0 {
+				var exportErr error
+				switch strings.ToLower(p.TechStack) {
+				case "go", "html", "python", "android":
+					exportErr = export.ExportToGoMakefile(p.Path, skills)
+				case "node", "nextjs":
+					exportErr = export.ExportToNodePackageJSON(p.Path, skills)
+				}
+				if exportErr != nil {
+					fmt.Printf("Warning: failed to auto-export skills on provision: %v\n", exportErr)
+				}
 			}
 		}
 

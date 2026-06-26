@@ -900,7 +900,8 @@ export const useNeuron = () => {
           name: dirName,
           path: dirPath,
           tech_stack: tech,
-          skill_urls: []
+          skill_urls: [],
+          track_existing: true,
         }),
       });
       const data = await res.json();

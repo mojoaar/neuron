@@ -348,3 +348,28 @@ func DownloadRemoteSkill(projectPath, urlStr string) (*storage.Skill, error) {
 
 	return sk, nil
 }
+
+// WriteDefaultSkillFiles writes built-in default skill definitions as SKILL.md files inside .agents/skills/neuron/
+// so that filesystem-scanning AI agents (Claude TUI, OpenCode TUI) can discover them without MCP.
+func WriteDefaultSkillFiles(projectPath string, skills []*storage.Skill) error {
+	for _, sk := range skills {
+		skillDir := filepath.Join(projectPath, ".agents", "skills", "neuron", sk.Name)
+		if err := os.MkdirAll(skillDir, 0755); err != nil {
+			return fmt.Errorf("failed to create skill directory %s: %w", skillDir, err)
+		}
+
+		content := fmt.Sprintf(`# %s
+
+**Description:** %s
+**Trigger:** %s
+**Execution Type:** %s
+**Execution Path:** %s
+`, sk.Name, sk.Description, sk.TriggerPattern, sk.ExecutionType, sk.ExecutionPath)
+
+		skillPath := filepath.Join(skillDir, "SKILL.md")
+		if err := os.WriteFile(skillPath, []byte(content), 0644); err != nil {
+			return fmt.Errorf("failed to write SKILL.md at %s: %w", skillPath, err)
+		}
+	}
+	return nil
+}
