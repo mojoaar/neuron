@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"neuron/internal/export"
+	"neuron/internal/scaffold"
 	"neuron/internal/storage"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -510,6 +511,258 @@ func StartServer(store *storage.Storage) error {
 		}
 
 		return mcp.NewToolResultText("Successfully truncated all DuckDB tables and re-seeded default catalog entries."), nil
+	})
+
+	// 18. Tool: project_summary
+	projectSummaryTool := mcp.NewTool("project_summary",
+		mcp.WithDescription("Get a dashboard overview of a project: task counts, skills count, git status, recent activity"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+	)
+	s.AddTool(projectSummaryTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err := request.RequireString("project_id")
+		if err != nil {
+			return mcp.NewToolResultError("Missing required parameter: project_id"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		tasks, _ := store.ListTasksByProject(ctx, projectID)
+		pending, inProgress, completed, cancelled := 0, 0, 0, 0
+		for _, t := range tasks {
+			switch t.Status {
+			case "pending":
+				pending++
+			case "in_progress":
+				inProgress++
+			case "completed":
+				completed++
+			case "cancelled":
+				cancelled++
+			}
+		}
+
+		skills, _ := store.ListSkillsByProject(ctx, projectID)
+		activity, _ := store.ListActivity(ctx, 5)
+
+		gCtx, gitCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer gitCancel()
+
+		gitBranch, gitCommit, gitDirty := "", "", 0
+		repoCmd := exec.CommandContext(gCtx, "git", "rev-parse", "--is-inside-work-tree")
+		repoCmd.Dir = proj.Path
+		if repoCmd.Run() == nil {
+			branchBytes, _ := exec.CommandContext(gCtx, "git", "branch", "--show-current").Output()
+			gitBranch = strings.TrimSpace(string(branchBytes))
+			commitBytes, _ := exec.CommandContext(gCtx, "git", "rev-parse", "--short", "HEAD").Output()
+			gitCommit = strings.TrimSpace(string(commitBytes))
+			statusBytes, _ := exec.CommandContext(gCtx, "git", "status", "--porcelain").Output()
+			gitDirty = len(strings.Fields(string(statusBytes)))
+		}
+
+		result, _ := json.MarshalIndent(map[string]interface{}{
+			"project":       proj,
+			"task_counts":   map[string]int{"pending": pending, "in_progress": inProgress, "completed": completed, "cancelled": cancelled},
+			"skill_count":   len(skills),
+			"git_branch":    gitBranch,
+			"git_commit":    gitCommit,
+			"git_is_dirty":  gitDirty > 0,
+			"recent_activity": activity,
+		}, "", "  ")
+
+		return mcp.NewToolResultText(string(result)), nil
+	})
+
+	// 19. Tool: run_tests
+	runTestsTool := mcp.NewTool("run_tests",
+		mcp.WithDescription("Run test and lint suites for a project and return results"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+	)
+	s.AddTool(runTestsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err := request.RequireString("project_id")
+		if err != nil {
+			return mcp.NewToolResultError("Missing required parameter: project_id"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		timeoutCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+
+		var testCmd, lintCmd *exec.Cmd
+		switch strings.ToLower(proj.TechStack) {
+		case "go":
+			testCmd = exec.CommandContext(timeoutCtx, "go", "test", "./...")
+			lintCmd = exec.CommandContext(timeoutCtx, "go", "vet", "./...")
+		case "node", "nextjs":
+			testCmd = exec.CommandContext(timeoutCtx, "npm", "test")
+			lintCmd = exec.CommandContext(timeoutCtx, "npm", "run", "lint")
+		case "python":
+			testCmd = exec.CommandContext(timeoutCtx, "python3", "-m", "unittest", "discover")
+			lintCmd = exec.CommandContext(timeoutCtx, "python3", "-m", "pyflakes", ".")
+		default:
+			testCmd = exec.CommandContext(timeoutCtx, "echo", "No test command configured")
+			lintCmd = exec.CommandContext(timeoutCtx, "echo", "No linter configured")
+		}
+
+		testCmd.Dir = proj.Path
+		testBytes, _ := testCmd.CombinedOutput()
+		testPassed := testCmd.ProcessState != nil && testCmd.ProcessState.Success()
+
+		lintCmd.Dir = proj.Path
+		lintBytes, _ := lintCmd.CombinedOutput()
+		lintPassed := lintCmd.ProcessState != nil && lintCmd.ProcessState.Success()
+
+		result, _ := json.MarshalIndent(map[string]interface{}{
+			"test_passed": testPassed,
+			"test_output": string(testBytes),
+			"lint_passed": lintPassed,
+			"lint_output": string(lintBytes),
+		}, "", "  ")
+
+		return mcp.NewToolResultText(string(result)), nil
+	})
+
+	// 20. Tool: create_project
+	createProjectTool := mcp.NewTool("create_project",
+		mcp.WithDescription("Provision a new project from scratch: scaffold files, generate AGENTS.md, register in DB"),
+		mcp.WithString("name", mcp.Description("The project name"), mcp.Required()),
+		mcp.WithString("path", mcp.Description("Absolute or relative path for the project directory"), mcp.Required()),
+		mcp.WithString("tech_stack", mcp.Description("Technology stack (go, node, nextjs, python, html, android, powershell)"), mcp.Required()),
+	)
+	s.AddTool(createProjectTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		name, err1 := request.RequireString("name")
+		path, err2 := request.RequireString("path")
+		tech, err3 := request.RequireString("tech_stack")
+		if err1 != nil || err2 != nil || err3 != nil {
+			return mcp.NewToolResultError("Missing required parameters"), nil
+		}
+
+		tech = strings.ToLower(strings.TrimSpace(tech))
+		if _, ok := map[string]bool{"go": true, "node": true, "nextjs": true, "python": true, "html": true, "android": true, "powershell": true}[tech]; !ok {
+			return mcp.NewToolResultError(fmt.Sprintf("Unsupported tech stack '%s' (supported: go, node, nextjs, python, html, android, powershell)", tech)), nil
+		}
+
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Invalid path: %v", err)), nil
+		}
+
+		if err := os.MkdirAll(absPath, 0755); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to create directory: %v", err)), nil
+		}
+
+		entries, _ := os.ReadDir(absPath)
+		for _, e := range entries {
+			if e.Name() != ".git" {
+				return mcp.NewToolResultError("Target directory is not empty"), nil
+			}
+		}
+
+		agentsTemplate := storage.GetDefaultAgentsTemplate(tech)
+		planTemplate := storage.GetDefaultPlanTemplate(tech)
+
+		if err := scaffold.ScaffoldProject(name, absPath, tech, planTemplate); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Scaffolding failed: %v", err)), nil
+		}
+		if err := scaffold.GenerateAgentsContext(name, absPath, tech, agentsTemplate); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("AGENTS.md generation failed: %v", err)), nil
+		}
+
+		p := &storage.Project{
+			ID:        name,
+			Name:      name,
+			Path:      absPath,
+			TechStack: tech,
+		}
+		if err := store.AddProject(ctx, p); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to register project: %v", err)), nil
+		}
+
+		out, _ := json.MarshalIndent(p, "", "  ")
+		return mcp.NewToolResultText(string(out)), nil
+	})
+
+	// 21. Tool: read_file
+	readFileTool := mcp.NewTool("read_file",
+		mcp.WithDescription("Read a file from a project directory"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+		mcp.WithString("relative_path", mcp.Description("Relative path to the file from the project root (e.g. src/main.go)"), mcp.Required()),
+	)
+	s.AddTool(readFileTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err1 := request.RequireString("project_id")
+		relPath, err2 := request.RequireString("relative_path")
+		if err1 != nil || err2 != nil {
+			return mcp.NewToolResultError("Missing required parameters"), nil
+		}
+
+		if strings.Contains(relPath, "..") || strings.HasPrefix(relPath, "/") {
+			return mcp.NewToolResultError("Invalid path: must be a relative path without directory traversal"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		absFile := filepath.Clean(filepath.Join(proj.Path, relPath))
+		if !strings.HasPrefix(absFile, filepath.Clean(proj.Path)) {
+			return mcp.NewToolResultError("Path escapes project root"), nil
+		}
+
+		content, err := os.ReadFile(absFile)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to read file: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(string(content)), nil
+	})
+
+	// 22. Tool: write_file
+	writeFileTool := mcp.NewTool("write_file",
+		mcp.WithDescription("Write content to a file inside a project directory (1MB max)"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+		mcp.WithString("relative_path", mcp.Description("Relative path to the file from the project root"), mcp.Required()),
+		mcp.WithString("content", mcp.Description("The content to write"), mcp.Required()),
+	)
+	s.AddTool(writeFileTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err1 := request.RequireString("project_id")
+		relPath, err2 := request.RequireString("relative_path")
+		content, err3 := request.RequireString("content")
+		if err1 != nil || err2 != nil || err3 != nil {
+			return mcp.NewToolResultError("Missing required parameters"), nil
+		}
+
+		if len(content) > 1<<20 {
+			return mcp.NewToolResultError("Content too large: maximum 1MB"), nil
+		}
+		if strings.Contains(relPath, "..") || strings.HasPrefix(relPath, "/") {
+			return mcp.NewToolResultError("Invalid path: must be a relative path without directory traversal"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		absFile := filepath.Clean(filepath.Join(proj.Path, relPath))
+		if !strings.HasPrefix(absFile, filepath.Clean(proj.Path)) {
+			return mcp.NewToolResultError("Path escapes project root"), nil
+		}
+
+		if err := os.MkdirAll(filepath.Dir(absFile), 0755); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to create directories: %v", err)), nil
+		}
+		if err := os.WriteFile(absFile, []byte(content), 0644); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Failed to write file: %v", err)), nil
+		}
+
+		return mcp.NewToolResultText(fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), relPath)), nil
 	})
 
 	return server.ServeStdio(s)
