@@ -34,6 +34,36 @@ Your project directories contain absolutely **zero proprietary configuration fil
 
 ---
 
+## 🎨 Key HUD Dashboard Features
+
+### Visual Themes & Fonts
+*   **5 Themes**: Switch between Neuron (green terminal), Dracula (purple syntax), Nord (arctic frost), Cyberpunk 2077 (neon), and GitHub Developer — each with dark and light modes.
+*   **10 Monospace Fonts**: Configure JetBrains Mono, Fira Code, Source Code Pro, IBM Plex Mono, Cascadia Code, Roboto Mono, Inconsolata, Space Mono, Ubuntu Mono, or Cousine — all weight variants loaded dynamically.
+*   **Editor Font Size**: Adjust plan editor, rules editor, and markdown preview font sizes from 11px to 17px.
+
+### Project Clusters
+Group related workspace environments into named clusters via the sidebar accordion. Each cluster renders a dashboard with member projects, per-project quick-link buttons, and batch unbind/remove actions.
+
+### DuckDB Table Viewer
+Click `DUCKDB:ACTIVE` in the sidebar footer to open a live relational database browser. View all tables, inspect rows with truncation for long values, delete projects with 2-step confirmation, and unhide hidden projects directly from the table view.
+
+### CI Verification Dashboard
+A test/lint status bar below the git bar in every project dashboard. Click **Tests: PASS/FAIL** or **Lint: PASS/WARN** to expand stdout/stderr output trays. Runs `go test` / `npm test` / `pytest` per tech stack with a 15-second timeout. Enable/disable in System Settings.
+
+### Activity Audit Timeline
+The **06_TIMELINE** tab in each project dashboard shows a scrollable event feed with color-coded action icons — project creation (green), task transitions (yellow), and deletions (red). Data persisted in the `activity_log` DuckDB table.
+
+### API Authentication Key
+An auto-generated API key is available under System Settings. Use it to authenticate external tools connecting to the Neuron HTTP daemon. Regenerate at any time.
+
+### Collapsible Terminal Logger
+The bottom console bar shows real-time operation logs with 24-hour timestamps, color-coded message types (system/success/error/info), and a collapse/expand toggle (`⌘J` / `Ctrl+J`).
+
+### Universal Command Palette
+Press `⌘K` / `Ctrl+K` to open a fuzzy-search overlay across projects, settings, dashboard tabs, and HUD commands. Navigate with arrow keys — the list auto-scrolls to keep the selected item visible.
+
+---
+
 ## 📁 Installation & Platform Support
 
 Neuron is compiled and distributed as a single, self-contained, zero-dependency executable.

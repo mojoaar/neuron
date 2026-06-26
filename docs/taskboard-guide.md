@@ -7,22 +7,36 @@ Neuron houses a premium, transactional **Kanban Task Board** that bridges high-l
 ## 📋 The DuckDB Backlog Pipeline
 
 Every backlog task in Neuron represents a structured relational record tracked inside your DuckDB project database. Tasks are organized into 4 logical states:
+
 1. **PENDING**: New requirements, ideas, or architectural steps waiting to be initiated.
 2. **IN PROGRESS**: Active tasks that a developer or an AI agent is currently executing.
 3. **COMPLETED**: Closed out tasks that have passed standard test and linter safety nets.
 4. **CANCELLED**: Deferrals or requirement adjustments that are kept in the backlog history for auditing.
 
+Task status changes are applied instantly via PATCH and logged to the Activity Audit Timeline (06_TIMELINE tab).
+
 ---
 
-## 🗂️ Markdown Checklist Importer
+## 🔄 Auto-Sync from plan.md
 
-Inside the **`[ 01_PLAN_REFINEMENT ]`** tab, you can edit your project's high-level specifications inside a split-screen markdown editor.
+Every time you open the **03_TASKBOARD** tab, Neuron automatically scans your project's `plan.md` file for markdown checklist items and syncs them into the task board:
 
-When you click **`[ IMPORT_PLAN_TO_KANBAN ]`**, Neuron triggers its native markdown checklist compiler:
-1. **Dynamic AST Scanner**: The Go backend scans your project's root `plan.md` file.
-2. **Checklist Matches**: It parses and extracts lines formatted as unchecked lists (`- [ ]`) or completed lists (`- [x]`).
-3. **Upsert Compilation**: 
-   * Each unchecked list item is translated and inserted into DuckDB as a **PENDING** task card.
-   * Each checked item is inserted as a **COMPLETED** task card.
-   * Neuron automatically assigns sequential task identifiers (e.g. `#1`, `#2`) to help organize your progress boards cleanly.
-   * If a task with the exact content already exists in the database, Neuron preserves its state to prevent duplicates!
+```markdown
+- [ ] Implement database layer    →  PENDING task
+- [x] Set up CI pipeline          →  COMPLETED task
+- [ ] Write unit tests            →  PENDING task
+```
+
+This auto-sync runs on every tab open so that any changes made to `plan.md` by an AI agent or external tool are immediately reflected in the task board — no manual import step needed.
+
+The backend deduplicates by task content: if a plan.md line already exists as a task, it is skipped. No duplicate tasks are ever created.
+
+### Manual Task Management
+
+You can also add tasks directly via the input form at the top of the board, and change task status with the inline buttons (PND / WRK / DON / CNL).
+
+---
+
+## 📋 Priority Coding
+
+Each task has a priority level (`high`, `medium`, `low`), displayed as colored badges on each card. High-priority items are highlighted in red, low-priority in blue, and medium in yellow.
