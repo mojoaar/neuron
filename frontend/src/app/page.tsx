@@ -245,13 +245,15 @@ export default function Page() {
               onUpdateSkill={state.handleUpdateSkill}
               onDeleteSkill={state.handleDeleteSkill}
               onExportSkills={state.handleExportSkills}
-              onSetupMcp={state.handleSetupMcp}
               tabEditorFontSize={state.tabEditorFontSize}
               checkStatus={state.checkStatus}
               isRefreshingCheck={state.isRefreshingCheck}
               onRefreshCheck={state.fetchCheckStatus}
               enableVerificationCi={state.enableVerificationCi}
               activityEntries={state.activityEntries}
+              readmeContent={state.readmeContent}
+              setReadmeContent={state.setReadmeContent}
+              onSaveReadme={state.handleSaveReadme}
             />
           )}
         </div>

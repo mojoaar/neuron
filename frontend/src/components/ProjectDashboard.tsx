@@ -21,14 +21,17 @@ interface ProjectDashboardProps {
   selectedProject: Project;
   tasks: Task[];
   skills: Skill[];
-  activeTab: "plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline";
-  setActiveTab: (tab: "plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline") => void;
+  activeTab: "plan" | "rules" | "tasks" | "skills" | "timeline" | "readme";
+  setActiveTab: (tab: "plan" | "rules" | "tasks" | "skills" | "timeline" | "readme") => void;
   planContent: string;
   setPlanContent: (val: string) => void;
   isSavingPlan: boolean;
   rulesContent: string;
   setRulesContent: (val: string) => void;
   isSavingRules: boolean;
+  readmeContent: string;
+  setReadmeContent: (val: string) => void;
+  onSaveReadme: () => void;
   gitStatus: GitStatus | null;
   isRefreshingGit: boolean;
   newTaskContent: string;
@@ -73,7 +76,6 @@ interface ProjectDashboardProps {
   onUpdateSkill: (e: React.FormEvent) => void;
   onDeleteSkill: (id: string, name: string) => void;
   onExportSkills: () => void;
-  onSetupMcp: (client: "opencode" | "claude" | "claude-code") => void;
   tabEditorFontSize: string;
   checkStatus: CheckStatus | null;
   isRefreshingCheck: boolean;
@@ -94,6 +96,9 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   rulesContent,
   setRulesContent,
   isSavingRules,
+  readmeContent,
+  setReadmeContent,
+  onSaveReadme,
   gitStatus,
   isRefreshingGit,
   newTaskContent,
@@ -138,7 +143,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   onUpdateSkill,
   onDeleteSkill,
   onExportSkills,
-  onSetupMcp,
   tabEditorFontSize,
   checkStatus,
   isRefreshingCheck,
@@ -155,17 +159,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const [showCheckDetails, setShowCheckDetails] = React.useState(false);
-  const [copiedClient, setCopiedClient] = React.useState<string | null>(null);
-
-  const handleCopyConfig = async (client: string) => {
-    const res = await fetch(`/api/system/mcp/config?client=${client}`);
-    if (res.ok) {
-      const data = await res.json();
-      await navigator.clipboard.writeText(data.config);
-      setCopiedClient(client);
-      setTimeout(() => setCopiedClient(null), 2000);
-    }
-  };
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col font-mono">
@@ -270,7 +263,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
       {/* Tabs list */}
       <div className="flex border-b border-terminal-border bg-terminal-dark/50 shrink-0">
-        {(["plan", "rules", "tasks", "skills", "mcp", "timeline"] as const).map((tab) => {
+        {(["plan", "rules", "tasks", "skills", "timeline", "readme"] as const).map((tab) => {
           const isActive = activeTab === tab;
           return (
             <button
@@ -282,7 +275,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   : "text-terminal-muted hover:text-terminal-text hover:bg-terminal-black/30"
               }`}
             >
-              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "tasks" ? "03_TASKBOARD" : tab === "skills" ? "04_SKILLS_CONSOLE" : tab === "mcp" ? "05_MCP_SERVER" : "06_TIMELINE"}
+              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "tasks" ? "03_TASKBOARD" : tab === "skills" ? "04_SKILLS_CONSOLE" : tab === "timeline" ? "05_TIMELINE" : "06_README.MD"}
             </button>
           );
         })}
@@ -639,46 +632,40 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           </div>
         )}
 
-        {activeTab === "mcp" && (
-          <div className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-y-auto w-full">
-            <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4 shrink-0">
-              <Sparkles className="w-4 h-4 animate-pulse" />
-              <h2 className="font-bold text-xs uppercase tracking-wider">[ MCP Server Integration Settings ]</h2>
+        {activeTab === "readme" && (
+          <div className="flex-1 flex gap-6 overflow-hidden">
+            {/* Split Left: markdown text editor */}
+            <div className="flex-1 flex flex-col border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+              <div className="flex items-center justify-between border-b border-terminal-border/40 pb-2.5 mb-4">
+                <div className="text-[10px] font-bold text-terminal-green uppercase">[ Edit README.md ]</div>
+                <button
+                  onClick={onSaveReadme}
+                  className="py-1 px-3 bg-terminal-green text-terminal-black hover:bg-terminal-green/90 text-[10px] font-bold uppercase rounded inline-flex items-center space-x-1 shadow-[0_0_10px_rgba(0,255,102,0.1)]"
+                >
+                  <Save className="w-3 h-3" />
+                  <span>Save README</span>
+                </button>
+              </div>
+              <textarea
+                value={readmeContent}
+                onChange={(e) => setReadmeContent(e.target.value)}
+                style={{ fontSize: tabEditorFontSize }}
+                className="flex-1 w-full bg-terminal-black border border-terminal-border text-terminal-text rounded p-4 font-mono outline-none focus:border-terminal-green leading-relaxed resize-none scrollbar-thin scrollbar-thumb-terminal-border"
+              />
             </div>
-            <p className="text-xs text-terminal-muted leading-relaxed mb-6 font-mono">
-              Neuron hosts a localized background MCP Server allowing compatible shell copilots or code clients (like Claude Desktop, Claude Code CLI, and OpenCode TUI) to read your plans, tasks, rules, and export functions seamlessly!
-            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Card OpenCode */}
-              <McpClientCard
-                title="OpenCode TUI Client"
-                configPath="~/.config/opencode/opencode.json"
-                client="opencode"
-                copiedClient={copiedClient}
-                onSetup={onSetupMcp}
-                onCopyConfig={handleCopyConfig}
-              />
-
-              {/* Card Claude Desktop */}
-              <McpClientCard
-                title="Claude Desktop Client"
-                configPath="~/Library/Application Support/Claude/claude_desktop_config.json"
-                client="claude"
-                copiedClient={copiedClient}
-                onSetup={onSetupMcp}
-                onCopyConfig={handleCopyConfig}
-              />
-
-              {/* Card Claude Code CLI */}
-              <McpClientCard
-                title="Claude Code CLI Client"
-                configPath="~/.claude.json"
-                client="claude-code"
-                copiedClient={copiedClient}
-                onSetup={onSetupMcp}
-                onCopyConfig={handleCopyConfig}
-              />
+            {/* Split Right: secure renderer container */}
+            <div className="flex-1 flex flex-col border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-hidden">
+              <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/40 pb-2.5 mb-4">
+                [ README Preview ]
+              </div>
+              <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-terminal-border" style={{ fontSize: tabEditorFontSize }}>
+                {readmeContent ? (
+                  <MarkdownRenderer content={readmeContent} style={{ fontSize: tabEditorFontSize }} />
+                ) : (
+                  <div className="text-center p-8 text-terminal-muted italic text-xs">README content empty.</div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -687,7 +674,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           <div className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-y-auto w-full">
             <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4 shrink-0">
               <RefreshCw className="w-4 h-4 animate-pulse" />
-              <h2 className="font-bold text-xs uppercase tracking-wider">[ 06_ACTIVITY_LOG & TIMELINE ]</h2>
+              <h2 className="font-bold text-xs uppercase tracking-wider">[ 05_ACTIVITY_LOG & TIMELINE ]</h2>
             </div>
             <div className="space-y-2">
               {activityEntries.length === 0 ? (
@@ -714,50 +701,6 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-};
-
-interface McpCardProps {
-  title: string;
-  configPath: string;
-  client: "opencode" | "claude" | "claude-code";
-  copiedClient: string | null;
-  onSetup: (client: "opencode" | "claude" | "claude-code") => void;
-  onCopyConfig: (client: string) => void;
-}
-
-const McpClientCard: React.FC<McpCardProps> = ({ title, configPath, client, copiedClient, onSetup, onCopyConfig }) => {
-  const isCopied = copiedClient === client;
-
-  return (
-    <div className="p-5 bg-terminal-black border border-terminal-border rounded-lg flex flex-col justify-between">
-      <div className="space-y-2.5 mb-4">
-        <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ {title} ]</div>
-        <p className="text-[11px] text-terminal-muted leading-relaxed font-mono">
-          Config file: <code className="text-terminal-text">{configPath}</code>
-        </p>
-      </div>
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => onSetup(client)}
-          className="flex-1 py-1.5 px-4 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center space-x-1.5"
-        >
-          <Database className="w-3.5 h-3.5" />
-          <span>Configure</span>
-        </button>
-        <button
-          onClick={() => onCopyConfig(client)}
-          className="py-1.5 px-2.5 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center"
-          title="Copy config to clipboard"
-        >
-          {isCopied ? (
-            <span className="text-terminal-green">Copied!</span>
-          ) : (
-            <Copy className="w-3.5 h-3.5" />
-          )}
-        </button>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export const useNeuron = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [activeTab, setActiveTab] = useState<"plan" | "rules" | "tasks" | "skills" | "mcp" | "timeline">("plan");
+  const [activeTab, setActiveTab] = useState<"plan" | "rules" | "tasks" | "skills" | "timeline" | "readme">("plan");
 
   // Path aware state
   const [cwd, setCwd] = useState("");
@@ -84,6 +84,7 @@ export const useNeuron = () => {
   const [isImportingPlan, setIsImportingPlan] = useState(false);
 
   const [rulesContent, setRulesContent] = useState("");
+  const [readmeContent, setReadmeContent] = useState("");
   const [isSavingRules, setIsSavingRules] = useState(false);
 
   // Source Control Status
@@ -395,6 +396,7 @@ export const useNeuron = () => {
     fetchProjectSkills(proj.id);
     fetchProjectPlan(proj.id);
     fetchProjectRules(proj.id);
+    fetchProjectReadme(proj.id);
     fetchGitStatus(proj.id);
   };
 
@@ -527,6 +529,38 @@ export const useNeuron = () => {
       addLog(`Failed to write rules: ${err.message}`, "error");
     } finally {
       setIsSavingRules(false);
+    }
+  };
+
+  const fetchProjectReadme = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/readme`);
+      if (res.ok) {
+        const data = await res.json();
+        setReadmeContent(data.content || "");
+      }
+    } catch (err) {
+      console.error("Failed to load readme:", err);
+    }
+  };
+
+  const handleSaveReadme = async () => {
+    if (!selectedProject) return;
+    addLog(`Saving project README file...`, "system");
+    try {
+      const res = await fetch(`/api/projects/${selectedProject.id}/readme`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: readmeContent }),
+      });
+      if (res.ok) {
+        addLog("SUCCESS: README.md written.", "success");
+      } else {
+        const d = await res.json();
+        addLog(`Failed to write README: ${d.error}`, "error");
+      }
+    } catch (err: any) {
+      addLog(`Failed to write README: ${err.message}`, "error");
     }
   };
 
@@ -1515,6 +1549,8 @@ export const useNeuron = () => {
     isImportingPlan,
     rulesContent,
     setRulesContent,
+    readmeContent,
+    setReadmeContent,
     isSavingRules,
     gitStatus,
     isRefreshingGit,
@@ -1567,6 +1603,8 @@ export const useNeuron = () => {
     handleSavePlan,
     handleImportPlanChecklist,
     handleSaveRules,
+    handleSaveReadme,
+    fetchProjectReadme,
     handleHideProject,
     handleUnhideProject,
     handleQuickTrackProject,

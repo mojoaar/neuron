@@ -822,6 +822,46 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 
+	case "readme":
+		proj, err := s.store.GetProject(ctx, projectID)
+		if err != nil {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			readmePath := filepath.Join(proj.Path, "README.md")
+			content, err := os.ReadFile(readmePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					respondJSON(w, http.StatusOK, map[string]string{"content": ""})
+					return
+				}
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]string{"content": string(content)})
+
+		case http.MethodPost:
+			r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+			var req struct {
+				Content string `json:"content"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid payload or payload too large")
+				return
+			}
+			readmePath := filepath.Join(proj.Path, "README.md")
+			if err := os.WriteFile(readmePath, []byte(req.Content), 0644); err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+		default:
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+
 	case "git":
 		proj, err := s.store.GetProject(ctx, projectID)
 		if err != nil {
