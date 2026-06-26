@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"neuron/internal/storage"
 
@@ -140,6 +143,100 @@ func StartServer(store *storage.Storage) error {
 		}
 
 		out, err := json.MarshalIndent(skills, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
+		return mcp.NewToolResultText(string(out)), nil
+	})
+
+	// 6. Tool: get_plan
+	getPlanTool := mcp.NewTool("get_plan",
+		mcp.WithDescription("Read the plan.md content for a project"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+	)
+	s.AddTool(getPlanTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err := request.RequireString("project_id")
+		if err != nil {
+			return mcp.NewToolResultError("Missing required parameter: project_id"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		planPath := filepath.Join(proj.Path, "plan.md")
+		content, err := os.ReadFile(planPath)
+		if err != nil {
+			return mcp.NewToolResultText("No plan.md found or unable to read the file."), nil
+		}
+
+		return mcp.NewToolResultText(string(content)), nil
+	})
+
+	// 7. Tool: get_rules
+	getRulesTool := mcp.NewTool("get_rules",
+		mcp.WithDescription("Read the AGENTS.md rules context for a project"),
+		mcp.WithString("project_id", mcp.Description("The unique identifier of the project"), mcp.Required()),
+	)
+	s.AddTool(getRulesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		projectID, err := request.RequireString("project_id")
+		if err != nil {
+			return mcp.NewToolResultError("Missing required parameter: project_id"), nil
+		}
+
+		proj, err := store.GetProject(ctx, projectID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Project not found: %v", err)), nil
+		}
+
+		rulesPath := filepath.Join(proj.Path, "AGENTS.md")
+		content, err := os.ReadFile(rulesPath)
+		if err != nil {
+			return mcp.NewToolResultText("No AGENTS.md found or unable to read the file."), nil
+		}
+
+		return mcp.NewToolResultText(string(content)), nil
+	})
+
+	// 8. Tool: list_clusters
+	listClustersTool := mcp.NewTool("list_clusters",
+		mcp.WithDescription("List all project clusters managed by Neuron"),
+	)
+	s.AddTool(listClustersTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		clusters, err := store.ListClusters(ctx)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error listing clusters: %v", err)), nil
+		}
+
+		out, err := json.MarshalIndent(clusters, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
+		return mcp.NewToolResultText(string(out)), nil
+	})
+
+	// 9. Tool: list_activity
+	listActivityTool := mcp.NewTool("list_activity",
+		mcp.WithDescription("List recent activity log entries"),
+		mcp.WithString("limit", mcp.Description("Maximum number of entries to return (default 50)")),
+	)
+	s.AddTool(listActivityTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		limit := 50
+		if limitStr, err := request.RequireString("limit"); err == nil {
+			if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 500 {
+				limit = parsed
+			}
+		}
+
+		entries, err := store.ListActivity(ctx, limit)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("Error listing activity: %v", err)), nil
+		}
+
+		out, err := json.MarshalIndent(entries, "", "  ")
 		if err != nil {
 			return nil, err
 		}

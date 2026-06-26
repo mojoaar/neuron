@@ -1269,7 +1269,7 @@ export const useNeuron = () => {
     }
   };
 
-  const handleSetupMcp = async (client: "opencode" | "claude") => {
+  const handleSetupMcp = async (client: "opencode" | "claude" | "claude-code") => {
     addLog(`Writing local integration JSON config for target client: ${client.toUpperCase()}...`, "system");
     try {
       const res = await fetch("/api/system/mcp/setup", {

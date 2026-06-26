@@ -79,6 +79,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/system/db/truncate", s.handleDbTruncate)
 	mux.HandleFunc("/api/system/activity", s.handleActivity)
 	mux.HandleFunc("/api/system/api-key", s.handleApiKey)
+	mux.HandleFunc("/api/system/mcp/config", s.handleMcpConfig)
 	mux.HandleFunc("/api/system/version", s.handleVersion)
 	mux.HandleFunc("/api/clusters", s.handleClusters)
 	mux.HandleFunc("/api/clusters/", s.handleClusterSubroutes)
@@ -1017,7 +1018,7 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Client string `json:"client"` // "opencode" or "claude"
+		Client string `json:"client"` // "opencode", "claude", or "claude-code"
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid payload")
@@ -1025,8 +1026,8 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clientType := strings.ToLower(strings.TrimSpace(req.Client))
-	if clientType != "opencode" && clientType != "claude" {
-		respondError(w, http.StatusBadRequest, "Invalid client type (supported: opencode, claude)")
+	if clientType != "opencode" && clientType != "claude" && clientType != "claude-code" {
+		respondError(w, http.StatusBadRequest, "Invalid client type (supported: opencode, claude, claude-code)")
 		return
 	}
 
@@ -1059,11 +1060,11 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 		if runtime.GOOS == "windows" {
 			appData := os.Getenv("APPDATA")
 			configPath = filepath.Join(appData, "Claude", "claude_desktop_config.json")
-		} else if runtime.GOOS == "darwin" {
-			configPath = filepath.Join(homeDir, "Library", "Application Support", "Claude", "claude_desktop_config.json")
 		} else {
-			configPath = filepath.Join(homeDir, ".config", "Claude", "claude_desktop_config.json")
+			configPath = filepath.Join(homeDir, "Library", "Application Support", "Claude", "claude_desktop_config.json")
 		}
+	case "claude-code":
+		configPath = filepath.Join(homeDir, ".claude.json")
 	}
 
 	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
@@ -1079,22 +1080,37 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mcpServersRaw, ok := configData["mcpServers"]
-	if !ok {
-		mcpServersRaw = make(map[string]interface{})
-	}
-	mcpServers, ok := mcpServersRaw.(map[string]interface{})
-	if !ok {
-		mcpServers = make(map[string]interface{})
+	// Per-client top-level key and entry format
+	var mcpKey string
+	var neuronConfig map[string]interface{}
+
+	if clientType == "opencode" {
+		mcpKey = "mcp"
+		neuronConfig = map[string]interface{}{
+			"type":    "local",
+			"command": []string{absExecPath, "mcp", "start"},
+			"enabled": true,
+		}
+	} else {
+		mcpKey = "mcpServers"
+		neuronConfig = map[string]interface{}{
+			"type":    "stdio",
+			"command": absExecPath,
+			"args":    []string{"mcp", "start"},
+		}
 	}
 
-	neuronConfig := map[string]interface{}{
-		"command": absExecPath,
-		"args":    []string{"mcp", "start"},
+	mcpRaw, ok := configData[mcpKey]
+	if !ok {
+		mcpRaw = make(map[string]interface{})
+	}
+	mcpData, ok := mcpRaw.(map[string]interface{})
+	if !ok {
+		mcpData = make(map[string]interface{})
 	}
 
-	mcpServers["neuron"] = neuronConfig
-	configData["mcpServers"] = mcpServers
+	mcpData["neuron"] = neuronConfig
+	configData[mcpKey] = mcpData
 
 	updatedJSON, err := json.MarshalIndent(configData, "", "  ")
 	if err != nil {
@@ -1117,6 +1133,51 @@ func (s *Server) handleSetupMcp(w http.ResponseWriter, r *http.Request) {
 		"path":    configPath,
 		"message": fmt.Sprintf("Neuron MCP server successfully registered inside %s configuration!", req.Client),
 	})
+}
+
+// handleMcpConfig returns the formatted JSON snippet for a client type that the user can copy-paste.
+func (s *Server) handleMcpConfig(w http.ResponseWriter, r *http.Request) {
+	client := r.URL.Query().Get("client")
+	if client != "opencode" && client != "claude" && client != "claude-code" {
+		respondError(w, http.StatusBadRequest, "Invalid client (supported: opencode, claude, claude-code)")
+		return
+	}
+
+	execPath, err := os.Executable()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to resolve executable path: "+err.Error())
+		return
+	}
+	absExecPath, err := filepath.Abs(execPath)
+	if err != nil {
+		absExecPath = execPath
+	}
+
+	var config map[string]interface{}
+	if client == "opencode" {
+		config = map[string]interface{}{
+			"mcp": map[string]interface{}{
+				"neuron": map[string]interface{}{
+					"type":    "local",
+					"command": []string{absExecPath, "mcp", "start"},
+					"enabled": true,
+				},
+			},
+		}
+	} else {
+		config = map[string]interface{}{
+			"mcpServers": map[string]interface{}{
+				"neuron": map[string]interface{}{
+					"type":    "stdio",
+					"command": absExecPath,
+					"args":    []string{"mcp", "start"},
+				},
+			},
+		}
+	}
+
+	raw, _ := json.MarshalIndent(config, "", "  ")
+	respondJSON(w, http.StatusOK, map[string]string{"config": string(raw)})
 }
 
 func dirExists(path string) bool {

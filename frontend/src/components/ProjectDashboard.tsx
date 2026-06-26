@@ -11,7 +11,8 @@ import {
   Trash, 
   Sparkles,
   Database,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { Project, Task, Skill, GitStatus, CatalogSkill, CheckStatus, ActivityEntry } from "../types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
@@ -74,7 +75,7 @@ interface ProjectDashboardProps {
   onUpdateSkill: (e: React.FormEvent) => void;
   onDeleteSkill: (id: string, name: string) => void;
   onExportSkills: () => void;
-  onSetupMcp: (client: "opencode" | "claude") => void;
+  onSetupMcp: (client: "opencode" | "claude" | "claude-code") => void;
   tabEditorFontSize: string;
   checkStatus: CheckStatus | null;
   isRefreshingCheck: boolean;
@@ -158,6 +159,17 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const [showCheckDetails, setShowCheckDetails] = React.useState(false);
+  const [copiedClient, setCopiedClient] = React.useState<string | null>(null);
+
+  const handleCopyConfig = async (client: string) => {
+    const res = await fetch(`/api/system/mcp/config?client=${client}`);
+    if (res.ok) {
+      const data = await res.json();
+      await navigator.clipboard.writeText(data.config);
+      setCopiedClient(client);
+      setTimeout(() => setCopiedClient(null), 2000);
+    }
+  };
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col font-mono">
@@ -640,49 +652,45 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         )}
 
         {activeTab === "mcp" && (
-          <div className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-y-auto max-w-4xl mx-auto w-full">
+          <div className="flex-1 border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] overflow-y-auto w-full">
             <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4 shrink-0">
               <Sparkles className="w-4 h-4 animate-pulse" />
               <h2 className="font-bold text-xs uppercase tracking-wider">[ MCP Server Integration Settings ]</h2>
             </div>
             <p className="text-xs text-terminal-muted leading-relaxed mb-6 font-mono">
-              Neuron hosts a localized background MCP Server allowing compatible shell copilots or code clients (like Claude TUI and OpenCode TUI) to read your plans, tasks, rules, and export functions seamlessly!
+              Neuron hosts a localized background MCP Server allowing compatible shell copilots or code clients (like Claude Desktop, Claude Code CLI, and OpenCode TUI) to read your plans, tasks, rules, and export functions seamlessly!
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Card OpenCode */}
-              <div className="p-5 bg-terminal-black border border-terminal-border rounded-lg flex flex-col justify-between">
-                <div className="space-y-2.5 mb-4">
-                  <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ OpenCode TUI Client ]</div>
-                  <p className="text-[11px] text-terminal-muted leading-relaxed font-mono">
-                    Registers the MCP server directly inside OpenCode TUI user config parameters profile located at <code className="text-terminal-text">~/.config/opencode/opencode.json</code>.
-                  </p>
-                </div>
-                <button
-                  onClick={() => onSetupMcp("opencode")}
-                  className="py-1.5 px-4 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center space-x-1.5"
-                >
-                  <Database className="w-3.5 h-3.5" />
-                  <span>Configure OpenCode</span>
-                </button>
-              </div>
+              <McpClientCard
+                title="OpenCode TUI Client"
+                configPath="~/.config/opencode/opencode.json"
+                client="opencode"
+                copiedClient={copiedClient}
+                onSetup={onSetupMcp}
+                onCopyConfig={handleCopyConfig}
+              />
 
               {/* Card Claude Desktop */}
-              <div className="p-5 bg-terminal-black border border-terminal-border rounded-lg flex flex-col justify-between">
-                <div className="space-y-2.5 mb-4">
-                  <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ Claude Desktop Client ]</div>
-                  <p className="text-[11px] text-terminal-muted leading-relaxed font-mono">
-                    Registers the MCP background server natively inside Claude Desktop user parameters config file located at <code className="text-terminal-text">~/Library/Application Support/Claude/claude_desktop_config.json</code>.
-                  </p>
-                </div>
-                <button
-                  onClick={() => onSetupMcp("claude")}
-                  className="py-1.5 px-4 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center space-x-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Configure Claude</span>
-                </button>
-              </div>
+              <McpClientCard
+                title="Claude Desktop Client"
+                configPath="~/Library/Application Support/Claude/claude_desktop_config.json"
+                client="claude"
+                copiedClient={copiedClient}
+                onSetup={onSetupMcp}
+                onCopyConfig={handleCopyConfig}
+              />
+
+              {/* Card Claude Code CLI */}
+              <McpClientCard
+                title="Claude Code CLI Client"
+                configPath="~/.claude.json"
+                client="claude-code"
+                copiedClient={copiedClient}
+                onSetup={onSetupMcp}
+                onCopyConfig={handleCopyConfig}
+              />
             </div>
           </div>
         )}
@@ -718,6 +726,50 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+interface McpCardProps {
+  title: string;
+  configPath: string;
+  client: "opencode" | "claude" | "claude-code";
+  copiedClient: string | null;
+  onSetup: (client: "opencode" | "claude" | "claude-code") => void;
+  onCopyConfig: (client: string) => void;
+}
+
+const McpClientCard: React.FC<McpCardProps> = ({ title, configPath, client, copiedClient, onSetup, onCopyConfig }) => {
+  const isCopied = copiedClient === client;
+
+  return (
+    <div className="p-5 bg-terminal-black border border-terminal-border rounded-lg flex flex-col justify-between">
+      <div className="space-y-2.5 mb-4">
+        <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ {title} ]</div>
+        <p className="text-[11px] text-terminal-muted leading-relaxed font-mono">
+          Config file: <code className="text-terminal-text">{configPath}</code>
+        </p>
+      </div>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => onSetup(client)}
+          className="flex-1 py-1.5 px-4 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center space-x-1.5"
+        >
+          <Database className="w-3.5 h-3.5" />
+          <span>Configure</span>
+        </button>
+        <button
+          onClick={() => onCopyConfig(client)}
+          className="py-1.5 px-2.5 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-xs font-bold uppercase transition-all flex items-center justify-center"
+          title="Copy config to clipboard"
+        >
+          {isCopied ? (
+            <span className="text-terminal-green">Copied!</span>
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
+        </button>
       </div>
     </div>
   );
