@@ -155,6 +155,7 @@ export default function Page() {
               }}
               apiKey={state.apiKey}
               onRegenerateApiKey={state.handleRegenerateApiKey}
+              onSetupMcp={state.handleSetupMcp}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard

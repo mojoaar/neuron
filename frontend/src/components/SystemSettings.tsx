@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   Type,
-  AlertTriangle
+  AlertTriangle,
+  Copy
 } from "lucide-react";
 import { SystemTemplate, CatalogSkill, Project, ThemeName, ThemeMode, FontFamily, THEMES, FONTS } from "../types";
 import { TECH_STACKS } from "../lib/techstack";
@@ -72,6 +73,7 @@ interface SystemSettingsProps {
   onTruncateDatabase: () => void;
   apiKey: string;
   onRegenerateApiKey: () => void;
+  onSetupMcp: (client: "opencode" | "claude" | "claude-code") => void;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -128,6 +130,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   onTruncateDatabase,
   apiKey,
   onRegenerateApiKey,
+  onSetupMcp,
 }) => {
   const [confirmTruncate, setConfirmTruncate] = React.useState(false);
   return (
@@ -583,6 +586,37 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
           </div>
         </div>
 
+      {/* MCP Server Integration Settings Card */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+          <Database className="w-4 h-4" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ MCP Server Integration Settings ]</h2>
+        </div>
+        <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+          Neuron hosts a localized MCP Server. Configure your AI clients below, or click the copy icon to copy the config snippet to your clipboard for manual setup.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <McpSettingsCard
+            title="OpenCode TUI"
+            configPath="~/.config/opencode/opencode.json"
+            client="opencode"
+            onSetup={onSetupMcp}
+          />
+          <McpSettingsCard
+            title="Claude Desktop"
+            configPath="~/Library/Application Support/Claude/claude_desktop_config.json"
+            client="claude"
+            onSetup={onSetupMcp}
+          />
+          <McpSettingsCard
+            title="Claude Code CLI"
+            configPath="~/.claude.json"
+            client="claude-code"
+            onSetup={onSetupMcp}
+          />
+        </div>
+      </div>
+
       {/* Danger Zone: Truncate All Database Tables */}
       <div className="border border-terminal-red/30 bg-terminal-red/5 rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
         <div className="flex items-center space-x-2 text-terminal-red border-b border-terminal-red/20 pb-2.5 mb-4">
@@ -631,6 +665,51 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
         )}
       </div>
 
+    </div>
+  );
+};
+
+const McpSettingsCard: React.FC<{
+  title: string;
+  configPath: string;
+  client: "opencode" | "claude" | "claude-code";
+  onSetup: (client: "opencode" | "claude" | "claude-code") => void;
+}> = ({ title, configPath, client, onSetup }) => {
+  const [copied, setCopied] = React.useState(false);
+  const [isConfiguring, setIsConfiguring] = React.useState(false);
+
+  const handleCopy = async () => {
+    const res = await fetch(`/api/system/mcp/config?client=${client}`);
+    if (res.ok) {
+      const data = await res.json();
+      await navigator.clipboard.writeText(data.config);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="p-4 bg-terminal-black border border-terminal-border rounded-lg flex flex-col justify-between space-y-3">
+      <div>
+        <div className="font-bold text-xs text-terminal-green uppercase font-mono">[ {title} ]</div>
+        <p className="text-[10px] text-terminal-muted font-mono mt-1 break-all">{configPath}</p>
+      </div>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => onSetup(client)}
+          className="flex-1 py-1.5 px-3 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-[10px] font-bold uppercase transition-all flex items-center justify-center space-x-1"
+        >
+          <Database className="w-3 h-3" />
+          <span>Configure</span>
+        </button>
+        <button
+          onClick={handleCopy}
+          className="py-1.5 px-2.5 rounded border border-terminal-border hover:border-terminal-green text-terminal-muted hover:text-terminal-green bg-terminal-dark text-[10px] font-bold uppercase transition-all"
+          title="Copy config to clipboard"
+        >
+          {copied ? <span className="text-terminal-green">Copied!</span> : <Copy className="w-3 h-3" />}
+        </button>
+      </div>
     </div>
   );
 };
