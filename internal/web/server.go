@@ -289,6 +289,24 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 			if err := scaffold.WriteDefaultSkillFiles(absPath, defaultSkills); err != nil {
 				fmt.Printf("Warning: failed to write default skill files: %v\n", err)
 			}
+
+			// Auto-install recommended catalog skills for the tech stack
+			catalogSkills, _ := s.store.ListCatalogSkills(ctx)
+			for _, cs := range catalogSkills {
+				if cs.TechStack != req.TechStack || !cs.IsChecked {
+					continue
+				}
+				sk, err := scaffold.DownloadRemoteSkill(absPath, cs.URL)
+				if err != nil {
+					fmt.Printf("Warning: failed to download catalog skill '%s': %v\n", cs.Label, err)
+					continue
+				}
+				sk.ProjectID = p.ID
+				sk.ID = p.ID + "_" + sk.ID
+				if err := s.store.AddSkill(ctx, sk); err != nil {
+					fmt.Printf("Warning: failed to add catalog skill '%s': %v\n", cs.Label, err)
+				}
+			}
 		}
 
 		// Download and save remote skills
