@@ -593,7 +593,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
               </div>
 
               {/* Recommendations Catalog */}
-              <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col h-[750px] shrink-0 overflow-hidden">
+              <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex flex-col h-[400px] shrink-0 overflow-hidden">
                 <div className="text-[10px] font-bold text-terminal-green uppercase border-b border-terminal-border/40 pb-2.5 mb-3 shrink-0">
                   [ Recommended skills Catalog Market ]
                 </div>
