@@ -402,8 +402,20 @@ func (s *Storage) DeleteProject(ctx context.Context, id string) error {
 func (s *Storage) prepopulateSystemTables() error {
 	ctx := context.Background()
 
+	// Migration: old activity_log schema had id INTEGER PRIMARY KEY that didn't auto-increment
+	// Check if the column still exists and migrate if needed
+	var colCount int
+	err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'activity_log' AND column_name = 'id';").Scan(&colCount)
+	if err == nil && colCount > 0 {
+		s.db.ExecContext(ctx, "ALTER TABLE activity_log RENAME TO activity_log_old;")
+		s.db.ExecContext(ctx, schemaSQL)
+		s.db.ExecContext(ctx, "INSERT INTO activity_log (entity_type, entity_id, project_id, action, label, created_at) SELECT entity_type, entity_id, project_id, action, label, created_at FROM activity_log_old;")
+		s.db.ExecContext(ctx, "DROP TABLE activity_log_old;")
+		fmt.Println("DUCKDB: Migrated activity_log table schema (removed old id column)")
+	}
+
 	var count int
-	err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM templates;").Scan(&count)
+	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM templates;").Scan(&count)
 	if err != nil {
 		return err
 	}
