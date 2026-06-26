@@ -312,6 +312,13 @@ export const useNeuron = () => {
     });
   }, [provTech, catalogSkills]);
 
+  // Auto-import plan.md checkboxes when the taskboard tab opens (approach B — always sync)
+  useEffect(() => {
+    if (activeTab === "tasks" && selectedProject) {
+      handleImportPlanChecklist();
+    }
+  }, [activeTab, selectedProject?.id]);
+
   const fetchClusters = async () => {
     try {
       const res = await fetch("/api/clusters");
