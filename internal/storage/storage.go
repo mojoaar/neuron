@@ -382,6 +382,11 @@ func (s *Storage) DeleteProject(ctx context.Context, id string) error {
 		return err
 	}
 
+	_, err = tx.ExecContext(ctx, "DELETE FROM cluster_projects WHERE project_id = ?;", id)
+	if err != nil {
+		return err
+	}
+
 	_, err = tx.ExecContext(ctx, "DELETE FROM projects WHERE id = ?;", id)
 	if err != nil {
 		return err
