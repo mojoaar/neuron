@@ -147,6 +147,14 @@ AI agents connecting to the Neuron MCP server can natively query and execute the
 7. **"get_rules(project_id)"**: Reads the full AGENTS.md rules context so agents respect coding boundaries.
 8. **"list_clusters"**: Lists all project clusters with their member workspaces.
 9. **"list_activity(limit?)"**: Returns recent activity log entries — project creation, task transitions, skill installs.
+10. **"update_plan(project_id, content)"**: Updates the plan.md content for a project.
+11. **"update_rules(project_id, content)"**: Updates the AGENTS.md rules text for a project.
+12. **"delete_task(project_id, task_id)"**: Permanently removes a task from a project.
+13. **"add_skill(project_id, name, execution_type, execution_path)"**: Registers a new automation skill.
+14. **"export_skills(project_id)"**: Compiles registered skills into native Makefile or package.json.
+15. **"git_status(project_id)"**: Returns Git branch, commit, and dirty/file state for a project.
+16. **"get_project(project_id)"**: Returns a single project's full metadata object.
+17. **"truncate_db(confirm)"**: Purges all database tables and re-seeds defaults. Requires confirm set to "yes".
 
 ---
 

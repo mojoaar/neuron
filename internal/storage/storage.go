@@ -354,6 +354,16 @@ func (s *Storage) DeleteSkill(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteTask purges a task from DuckDB.
+func (s *Storage) DeleteTask(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM tasks WHERE id = ?;", id)
+	if err != nil {
+		return fmt.Errorf("failed to delete task: %w", err)
+	}
+	s.LogActivity(ctx, "task", id, "", "deleted", "")
+	return nil
+}
+
 // DeleteProject purges a project, its tasks, and its skills from DuckDB in a single atomic transaction.
 func (s *Storage) DeleteProject(ctx context.Context, id string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
