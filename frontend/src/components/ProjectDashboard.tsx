@@ -263,7 +263,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
       {/* Tabs list */}
       <div className="flex border-b border-terminal-border bg-terminal-dark/50 shrink-0">
-        {(["plan", "rules", "tasks", "skills", "timeline", "readme"] as const).map((tab) => {
+        {(["plan", "rules", "readme", "skills", "tasks", "timeline"] as const).map((tab) => {
           const isActive = activeTab === tab;
           return (
             <button
@@ -275,7 +275,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   : "text-terminal-muted hover:text-terminal-text hover:bg-terminal-black/30"
               }`}
             >
-              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "tasks" ? "03_TASKBOARD" : tab === "skills" ? "04_SKILLS_CONSOLE" : tab === "timeline" ? "05_TIMELINE" : "06_README.MD"}
+              {tab === "plan" ? "01_PLAN.MD" : tab === "rules" ? "02_AGENTS.MD" : tab === "readme" ? "03_README.MD" : tab === "skills" ? "04_SKILLS_CONSOLE" : tab === "tasks" ? "05_TASKBOARD" : "06_TIMELINE"}
             </button>
           );
         })}
