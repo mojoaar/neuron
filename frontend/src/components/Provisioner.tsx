@@ -10,6 +10,8 @@ interface ProvisionerProps {
   setProvPath: (val: string) => void;
   provTech: string;
   setProvTech: (val: string) => void;
+  provLicense: string;
+  setProvLicense: (val: string) => void;
   selectedSkillUrls: string[];
   setSelectedSkillUrls: (urls: string[]) => void;
   catalogSkills: CatalogSkill[];
@@ -31,6 +33,8 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
   setProvPath,
   provTech,
   setProvTech,
+  provLicense,
+  setProvLicense,
   selectedSkillUrls,
   setSelectedSkillUrls,
   catalogSkills,
@@ -111,6 +115,24 @@ export const Provisioner: React.FC<ProvisionerProps> = ({
                   <option value="powershell">PowerShell Cmdlet Tools</option>
                 </select>
               </div>
+            </div>
+
+            {/* License selector */}
+            <div className="space-y-1.5 pt-2">
+              <label className="text-[10px] font-bold text-terminal-muted uppercase">Open Source License</label>
+              <select
+                value={provLicense}
+                onChange={(e) => setProvLicense(e.target.value)}
+                className="w-full bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-2 text-xs outline-none focus:border-terminal-green"
+              >
+                <option value="">No license file</option>
+                <option value="mit">MIT License</option>
+                <option value="apache-2.0">Apache 2.0</option>
+                <option value="gpl-3.0">GNU GPL v3</option>
+                <option value="agpl-3.0">GNU AGPL v3</option>
+                <option value="bsd-3-clause">BSD 3-Clause</option>
+                <option value="unlicense">The Unlicense</option>
+              </select>
             </div>
 
             {/* Recommended Skills Checklist */}

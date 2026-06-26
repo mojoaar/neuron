@@ -862,6 +862,55 @@ func (s *Server) handleProjectSubroutes(w http.ResponseWriter, r *http.Request) 
 			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 
+	case "license":
+		proj, err := s.store.GetProject(ctx, projectID)
+		if err != nil {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			licensePath := filepath.Join(proj.Path, "LICENSE")
+			content, err := os.ReadFile(licensePath)
+			if err != nil {
+				if os.IsNotExist(err) {
+					respondJSON(w, http.StatusOK, map[string]string{"license": "", "template": ""})
+					return
+				}
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]string{"license": string(content), "template": ""})
+
+		case http.MethodPost:
+			var req struct {
+				Name string `json:"name"` // license name: mit, gpl-3.0, etc.
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				respondError(w, http.StatusBadRequest, "Invalid payload")
+				return
+			}
+			req.Name = strings.ToLower(strings.TrimSpace(req.Name))
+			if req.Name == "" {
+				respondError(w, http.StatusBadRequest, "Missing license name")
+				return
+			}
+			template := storage.GetLicenseTemplate(req.Name)
+			if template == "" {
+				respondError(w, http.StatusBadRequest, "Unsupported license type")
+				return
+			}
+			licensePath := filepath.Join(proj.Path, "LICENSE")
+			if err := os.WriteFile(licensePath, []byte(template), 0644); err != nil {
+				respondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			respondJSON(w, http.StatusOK, map[string]bool{"success": true})
+
+		default:
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		}
+
 	case "git":
 		proj, err := s.store.GetProject(ctx, projectID)
 		if err != nil {

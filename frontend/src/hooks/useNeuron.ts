@@ -96,6 +96,7 @@ export const useNeuron = () => {
   const [provName, setProvName] = useState("");
   const [provPath, setProvPath] = useState("");
   const [provTech, setProvTech] = useState("go");
+  const [provLicense, setProvLicense] = useState("");
   const [skillSelectionsByStack, setSkillSelectionsByStack] = useState<Record<string, string[]>>({});
 
   const selectedSkillUrls = skillSelectionsByStack[provTech] || [];
@@ -1102,6 +1103,15 @@ export const useNeuron = () => {
       if (res.ok) {
         addLog(`SUCCESS: Project filesystem structure scaffolded and metadata registered in DuckDB.`, "success");
         setProvName("");
+        // Write license file if selected
+        if (provLicense && data.id) {
+          await fetch(`/api/projects/${data.id}/license`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: provLicense }),
+          });
+          addLog(`SUCCESS: ${provLicense.toUpperCase()} license file written to project root.`, "success");
+        }
         await fetchProjects();
         handleSelectProject(data);
       } else {
@@ -1111,6 +1121,26 @@ export const useNeuron = () => {
       addLog(`Provisioning failed: ${err.message}`, "error");
     } finally {
       setIsProvisioning(false);
+    }
+  };
+
+  const handleWriteLicense = async (projectId: string, license: string) => {
+    if (!license) return;
+    addLog(`Writing ${license.toUpperCase()} license file...`, "system");
+    try {
+      const res = await fetch(`/api/projects/${projectId}/license`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: license }),
+      });
+      if (res.ok) {
+        addLog(`SUCCESS: ${license.toUpperCase()} license file written.`, "success");
+      } else {
+        const d = await res.json();
+        addLog(`Failed to write license: ${d.error}`, "error");
+      }
+    } catch (err: any) {
+      addLog(`Failed to write license: ${err.message}`, "error");
     }
   };
 
@@ -1561,6 +1591,8 @@ export const useNeuron = () => {
     setProvPath,
     provTech,
     setProvTech,
+    provLicense,
+    setProvLicense,
     selectedSkillUrls,
     setSelectedSkillUrls,
     newTaskContent,
@@ -1627,6 +1659,7 @@ export const useNeuron = () => {
     handleAddCatalogSkill,
     handleDeleteCatalogSkill,
     handleProvision,
+    handleWriteLicense,
     handleAddTask,
     handleUpdateTaskStatus,
     handleAddSkill,

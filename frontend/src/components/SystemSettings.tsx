@@ -74,6 +74,8 @@ interface SystemSettingsProps {
   apiKey: string;
   onRegenerateApiKey: () => void;
   onSetupMcp: (client: "opencode" | "claude" | "claude-code") => void;
+  selectedProjectId: string | null;
+  onWriteLicense: (projectId: string, license: string) => Promise<void>;
 }
 
 export const SystemSettings: React.FC<SystemSettingsProps> = ({
@@ -131,8 +133,11 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
   apiKey,
   onRegenerateApiKey,
   onSetupMcp,
+  selectedProjectId,
+  onWriteLicense,
 }) => {
   const [confirmTruncate, setConfirmTruncate] = React.useState(false);
+  const [selectedLicense, setSelectedLicense] = React.useState("");
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6 w-full font-mono">
       {/* Scope Settings */}
@@ -585,6 +590,48 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({
             )}
           </div>
         </div>
+
+      {/* Project License Card */}
+      <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-2 text-terminal-green border-b border-terminal-border/40 pb-2.5 mb-4">
+          <FileCode className="w-4 h-4" />
+          <h2 className="font-bold text-xs uppercase tracking-wider">[ Project License Manager ]</h2>
+        </div>
+        <p className="text-[11px] text-terminal-muted leading-relaxed mb-4">
+          Select an open-source license to write a LICENSE file into the currently active project's root directory.
+        </p>
+        <div className="flex items-center space-x-2.5">
+          <select
+            value={selectedLicense}
+            onChange={(e) => setSelectedLicense(e.target.value)}
+            className="flex-1 bg-terminal-black border border-terminal-border text-terminal-text rounded px-2.5 py-1.5 text-xs outline-none focus:border-terminal-green font-bold"
+          >
+            <option value="">Select a license...</option>
+            <option value="mit">MIT License</option>
+            <option value="apache-2.0">Apache 2.0</option>
+            <option value="gpl-3.0">GNU GPL v3</option>
+            <option value="agpl-3.0">GNU AGPL v3</option>
+            <option value="bsd-3-clause">BSD 3-Clause</option>
+            <option value="unlicense">The Unlicense</option>
+          </select>
+          <button
+            onClick={async () => {
+              if (selectedProjectId && selectedLicense) {
+                await onWriteLicense(selectedProjectId, selectedLicense);
+                setSelectedLicense("");
+              }
+            }}
+            disabled={!selectedProjectId || !selectedLicense}
+            className="py-1.5 px-4 rounded bg-terminal-green text-terminal-black font-bold text-xs uppercase flex items-center space-x-1.5 transition-all shadow-[0_0_10px_rgba(0,255,102,0.1)] shrink-0"
+          >
+            <FileCode className="w-3.5 h-3.5" />
+            <span>Write License</span>
+          </button>
+        </div>
+        {!selectedProjectId && (
+          <p className="text-[10px] text-terminal-yellow mt-2">Select a project from the sidebar first to enable license writing.</p>
+        )}
+      </div>
 
       {/* MCP Server Integration Settings Card */}
       <div className="border border-terminal-border bg-terminal-dark rounded-lg p-5 shadow-[0_4px_12px_rgba(0,0,0,0.5)]">

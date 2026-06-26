@@ -156,6 +156,8 @@ export default function Page() {
               apiKey={state.apiKey}
               onRegenerateApiKey={state.handleRegenerateApiKey}
               onSetupMcp={state.handleSetupMcp}
+              selectedProjectId={state.selectedProject?.id || null}
+              onWriteLicense={state.handleWriteLicense}
             />
           ) : state.selectedCluster !== null ? (
             <ClusterDashboard
@@ -176,6 +178,8 @@ export default function Page() {
               setProvPath={state.setProvPath}
               provTech={state.provTech}
               setProvTech={state.setProvTech}
+              provLicense={state.provLicense}
+              setProvLicense={state.setProvLicense}
               selectedSkillUrls={state.selectedSkillUrls}
               setSelectedSkillUrls={state.setSelectedSkillUrls}
               catalogSkills={state.catalogSkills}
